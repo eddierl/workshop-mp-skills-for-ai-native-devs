@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Skills for AI-Native Devs — Workshop Handout</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-alt: #161a21;
+    --bg-alt-2: #1d222b;
+    --fg: #f4f5f7;
+    --muted: #9aa3b2;
+    --accent: #6ee7d5;
+    --accent-2: #a78bfa;
+    --rule: #2a2f3a;
+    --warn: #f5b942;
+    --danger: #f87171;
+    --ok: #6ee7a0;
+    --mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    --toolbar-h: 58px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    line-height: 1.5;
+    padding-top: var(--toolbar-h);
+  }
+
+  a { color: var(--accent); }
+
+  input, textarea, select, button { font-family: inherit; }
+
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; }
+  input[type="range"] { accent-color: var(--accent-2); }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--toolbar-h);
+    background: rgba(15,17,21,0.92); backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; gap: 0.9rem;
+    padding: 0 1rem; z-index: 100;
+  }
+  .toolbar .brand { font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
+  .toolbar .brand .accent { color: var(--accent); }
+  .toc-toggle {
+    display: none; background: var(--bg-alt); border: 1px solid var(--rule); color: var(--fg);
+    border-radius: 6px; padding: 0.4rem 0.6rem; cursor: pointer; font-size: 1rem;
+  }
+  .toolbar-progress { flex: 1; display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+  .toolbar-progress .bar-track { flex: 1; height: 6px; background: var(--rule); border-radius: 999px; overflow: hidden; }
+  .toolbar-progress .bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.3s ease; }
+  .toolbar-progress .pct { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); min-width: 3em; text-align: right; }
+  .save-indicator { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); white-space: nowrap; display: none; }
+  @media (min-width: 720px) { .save-indicator { display: inline; } }
+  .btn {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.03em; text-transform: uppercase;
+    background: var(--bg-alt); color: var(--fg); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 0.5rem 0.75rem; cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #06231f; border-color: var(--accent); font-weight: 700; }
+  .btn.primary:hover { color: #06231f; filter: brightness(1.08); }
+  .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+  .btn.small { padding: 0.35rem 0.55rem; font-size: 0.65rem; }
+
+  /* ---------- Layout ---------- */
+  .layout { display: flex; align-items: flex-start; }
+
+  .toc {
+    width: 270px; flex-shrink: 0;
+    position: sticky; top: var(--toolbar-h); height: calc(100vh - var(--toolbar-h));
+    overflow-y: auto; border-right: 1px solid var(--rule); background: var(--bg-alt);
+    padding: 1.25rem 0.75rem 3rem;
+  }
+  .toc h4 { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; color: var(--muted); margin: 0 0.5rem 0.75rem; }
+  .toc-item { display: block; text-decoration: none; color: var(--fg); padding: 0.5rem 0.6rem; border-radius: 6px; margin-bottom: 0.15rem; }
+  .toc-item:hover { background: var(--bg-alt-2); }
+  .toc-item.active { background: var(--bg-alt-2); box-shadow: inset 2px 0 0 var(--accent); }
+  .toc-item .label { display: flex; justify-content: space-between; font-size: 0.82rem; gap: 0.5rem; }
+  .toc-item .time { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
+  .toc-item .mini-bar { height: 3px; background: var(--rule); border-radius: 999px; margin-top: 0.4rem; overflow: hidden; }
+  .toc-item .mini-bar span { display: block; height: 100%; width: 0%; background: var(--accent); }
+
+  .content { flex: 1; min-width: 0; max-width: 900px; margin: 0 auto; padding: 2.5rem 2rem 8rem; }
+
+  @media (max-width: 900px) {
+    .toc-toggle { display: inline-flex; }
+    .toc {
+      position: fixed; top: var(--toolbar-h); left: 0; bottom: 0; z-index: 90;
+      transform: translateX(-100%); transition: transform 0.25s ease; width: 80vw; max-width: 320px;
+    }
+    .toc.open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+    .content { padding: 1.75rem 1.1rem 8rem; }
+  }
+
+  /* ---------- Typography ---------- */
+  h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.15; margin: 0 0 0.75rem; font-weight: 700; letter-spacing: -0.01em; }
+  h1 .accent { color: var(--accent); } h1 .accent2 { color: var(--accent-2); }
+  h2 { font-size: 1.5rem; margin: 0; }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; color: var(--fg); }
+  .lede { color: var(--muted); max-width: 42em; font-size: 1.02rem; }
+  .eyebrow { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.72rem; color: var(--accent); }
+
+  /* ---------- Sections ---------- */
+  .ws-section { padding: 2.75rem 0; border-bottom: 1px solid var(--rule); scroll-margin-top: calc(var(--toolbar-h) + 10px); }
+  .ws-section:first-of-type { padding-top: 0.5rem; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .section-head .headline { display: flex; flex-direction: column; gap: 0.3rem; }
+  .time-chip {
+    font-family: var(--mono); font-size: 0.68rem; color: var(--muted); border: 1px solid var(--rule);
+    border-radius: 999px; padding: 0.25rem 0.65rem; white-space: nowrap; align-self: flex-start;
+  }
+
+  /* ---------- Cards / grid ---------- */
+  .grid { display: grid; gap: 1rem; margin: 1.5rem 0; }
+  .grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 760px) { .grid.cols-2, .grid.cols-3 { grid-template-columns: 1fr; } }
+
+  .card { background: var(--bg-alt); border: 1px solid var(--rule); border-radius: 10px; padding: 1.1rem 1.25rem; }
+  .card h3 { margin: 0 0 0.4rem; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+  .card.skill-pick { position: relative; cursor: pointer; padding-right: 2.6rem; transition: border-color 0.15s ease, background 0.15s ease; }
+  .card.skill-pick:hover { border-color: var(--accent); }
+  .card.skill-pick:has(input:checked) { border-color: var(--accent); background: rgba(110,231,213,0.08); }
+  .card.skill-pick input[type="checkbox"] { position: absolute; top: 1.1rem; right: 1.1rem; }
+  .card.skill-pick h3 label { cursor: pointer; }
+
+  .tag { display: inline-block; font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--bg); background: var(--accent); border-radius: 4px; padding: 0.12rem 0.4rem; }
+  .tag.alt { background: var(--accent-2); }
+  .tag.warn { background: var(--warn); }
+
+  .quote-box {
+    border-left: 3px solid var(--accent-2); background: var(--bg-alt); border-radius: 0 8px 8px 0;
+    padding: 1rem 1.25rem; margin: 1.5rem 0; font-size: 1.05rem; color: var(--fg);
+  }
+  .quote-box .eyebrow { display: block; margin-bottom: 0.35rem; }
+
+  .reference {
+    background: var(--bg-alt-2); border: 1px dashed var(--rule); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.25rem 0; font-size: 0.88rem; color: var(--muted);
+  }
+  .reference table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.85rem; }
+  .reference th, .reference td { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--rule); }
+  .reference th { color: var(--fg); font-family: var(--mono); font-weight: 400; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* ---------- Details / help boxes ---------- */
+  details.help { border-radius: 8px; padding: 0.1rem 1rem; margin: 1rem 0; border: 1px solid var(--rule); background: var(--bg-alt); }
+  details.help summary { cursor: pointer; padding: 0.75rem 0; font-weight: 600; font-size: 0.9rem; list-style: none; display: flex; align-items: center; gap: 0.5rem; }
+  details.help summary::-webkit-details-marker { display: none; }
+  details.help summary::before { content: "▸"; color: var(--muted); transition: transform 0.15s ease; }
+  details.help[open] summary::before { transform: rotate(90deg); }
+  details.help .help-body { padding-bottom: 1rem; color: var(--muted); font-size: 0.9rem; }
+  details.help-beginner { border-color: rgba(110,231,213,0.35); }
+  details.help-beginner summary { color: var(--accent); }
+  details.help-advanced { border-color: rgba(167,139,250,0.35); }
+  details.help-advanced summary { color: var(--accent-2); }
+
+  /* ---------- Fields ---------- */
+  .field { margin: 1.4rem 0; }
+  .field-label { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; display: block; }
+  .field-hint { color: var(--muted); font-size: 0.82rem; margin: -0.3rem 0 0.5rem; }
+  .field input[type="text"], .field input[type="date"], .field textarea, .field select {
+    width: 100%; background: var(--bg-alt); border: 1px solid var(--rule); border-radius: 8px;
+    color: var(--fg); padding: 0.65rem 0.8rem; font-size: 0.92rem;
+  }
+  .field input[type="text"]:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent); }
+  .field textarea { min-height: 5rem; resize: vertical; line-height: 1.5; }
+  .options { display: flex; flex-direction: column; gap: 0.5rem; }
+  .options.inline { flex-direction: row; flex-wrap: wrap; gap: 0.6rem 1.2rem; }
+  .options label { display: flex; align-items: center; gap: 0.55rem; font-size: 0.9rem; cursor: pointer; }
+  .options label.pill {
+    background: var(--bg-alt); border: 1px solid var(--rule); border-radius: 8px; padding: 0.55rem 0.8rem;
+  }
+  .options label.pill:has(input:checked) { border-color: var(--accent); background: rgba(110,231,213,0.08); }
+
+  .range-field { display: flex; align-items: center; gap: 0.75rem; }
+  .range-field input[type="range"] { flex: 1; }
+  .range-field output { font-family: var(--mono); font-size: 0.85rem; min-width: 1.5em; text-align: center; background: var(--bg-alt); border-radius: 6px; padding: 0.2rem 0.4rem; }
+  .range-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 600px) { .range-pair { grid-template-columns: 1fr; } }
+  .range-pair .range-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+
+  /* ---------- Quiz ---------- */
+  .quiz { background: var(--bg-alt-2); border: 1px solid var(--rule); border-radius: 10px; padding: 1.1rem 1.25rem; margin: 1.25rem 0; }
+  .quiz-q { font-weight: 600; margin: 0 0 0.75rem; }
+  .quiz-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .quiz-btn { background: var(--bg-alt); border: 1px solid var(--rule); color: var(--fg); border-radius: 6px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.88rem; }
+  .quiz-btn.correct { border-color: var(--ok); background: rgba(110,231,160,0.12); color: var(--ok); }
+  .quiz-btn.incorrect { border-color: var(--danger); background: rgba(248,113,113,0.12); color: var(--danger); }
+  .quiz-feedback { margin: 0.85rem 0 0; color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--rule); padding-top: 0.75rem; }
+
+  /* ---------- Checklist as action items (no export styling difference) ---------- */
+  .checklist label { font-size: 0.92rem; }
+
+  /* ---------- Journal / final section ---------- */
+  .journal-preview {
+    background: var(--bg-alt); border: 1px solid var(--rule); border-radius: 10px; padding: 1.25rem 1.5rem; margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+  .journal-preview dt { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); margin-top: 0.85rem; }
+  .journal-preview dt:first-child { margin-top: 0; }
+  .journal-preview dd { margin: 0.2rem 0 0; color: var(--fg); white-space: pre-wrap; }
+  .journal-preview dd.empty { color: var(--muted); font-style: italic; }
+
+  .export-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.5rem 0; }
+  .privacy-note { font-size: 0.85rem; color: var(--muted); display: flex; gap: 0.5rem; align-items: flex-start; background: var(--bg-alt-2); border-radius: 8px; padding: 0.85rem 1rem; }
+
+  footer.page-footer { color: var(--muted); font-size: 0.82rem; padding-top: 2rem; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--fg); color: var(--bg); padding: 0.7rem 1.2rem; border-radius: 8px; font-size: 0.88rem;
+    opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .no-export-badge { display: none; } /* reserved, not currently used visually */
+
+  @media print {
+    .toolbar, .toc, .toc-toggle, #toast, .quiz, .export-actions, details.help { display: none !important; }
+    body { padding-top: 0; }
+    .content { max-width: none; padding: 0; }
+  }
+
+  [hidden] { display: none !important; }
+  html { scroll-behavior: auto; }
+  body { overflow-x: hidden; }
+  .content { position: relative; }
+  .ws-section { border-bottom: 0; min-height: 65vh; }
+  .ws-section.slide-in { animation: enter-slide .32s ease-out; }
+  @keyframes enter-slide { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .slide-nav { display: flex; align-items: center; justify-content: space-between; gap: .75rem; border-top: 1px solid var(--rule); padding: 1rem 0; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg-alt); padding: 1rem; border-radius: 6px; }
+  select { max-width: 100%; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  @media (prefers-reduced-motion: reduce) { .ws-section.slide-in { animation: none; } }
+  @media print { .ws-section[hidden] { display: block !important; } .slide-nav { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="toc-toggle" id="tocToggle" aria-label="Toggle contents">☰</button>
+  <div class="brand">Skills for <span class="accent">AI-Native</span> Devs</div>
+  <div class="toolbar-progress">
+    <div class="bar-track"><div class="bar-fill" id="progressFill"></div></div>
+    <span class="pct" id="progressPct">0%</span>
+  </div>
+  <span class="save-indicator" id="saveIndicator">not saved yet</span>
+  <button class="btn primary" id="exportMdBtn">⤓ Export .md</button>
+</div>
+
+<div class="layout">
+  <nav class="toc" id="toc">
+    <h4>Workshop handout</h4>
+    <div id="tocList"></div>
+  </nav>
+
+  <main class="content">
+
+    <!-- ===================== WELCOME ===================== -->
+    <section class="ws-section" id="welcome" data-short="Welcome" data-time="" data-export-title="Your profile">
+      <div class="eyebrow">Perth AI Club · Participant Handout</div>
+      <h1>Skills for <span class="accent">AI-Native</span> Devs</h1>
+      <p class="lede">A working companion to today's session — part worksheet, part journal. It follows the same run sheet as the facilitator guide, with room to reflect as you go, not just steps to tick off.</p>
+
+      <div class="privacy-note">
+        <span>🔒</span>
+        <span>
+          <strong>Everything you type stays on this device.</strong> Answers autosave to this browser's local storage as you go — nothing is sent to a server, logged, or shared. Use the <strong>Export .md</strong> button any time (top right, and again at the end) to download everything as one Markdown file you can keep, paste into your own notes, or hand to your team. Closing the tab is safe; your answers will still be here next time you open this file in the same browser.
+        </span>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="field" data-type="text">
+          <label class="field-label" for="participant-name">Your name <span style="font-weight:400;color:var(--muted);">(optional — just for your export)</span></label>
+          <input type="text" id="participant-name" name="participant-name" placeholder="e.g. Sam">
+        </div>
+        <div class="field" data-type="text">
+          <label class="field-label" for="session-date">Today's date</label>
+          <input type="date" id="session-date" name="session-date">
+        </div>
+      </div>
+
+<div class="field" data-type="radio"><span class="field-label">Which operating system are you using?</span><div class="options inline"><label class="pill"><input type="radio" name="participant-os" value="windows"> Windows</label><label class="pill"><input type="radio" name="participant-os" value="mac"> Mac</label></div></div><div class="field" data-type="radio"><span class="field-label">Which tool are you using?</span><div class="options inline"><label class="pill"><input type="radio" name="participant-tool" value="desktop"> Claude Desktop</label><label class="pill"><input type="radio" name="participant-tool" value="claude"> Claude Code</label><label class="pill"><input type="radio" name="participant-tool" value="codex"> Codex</label><label class="pill"><input type="radio" name="participant-tool" value="other"> Other</label></div></div><div class="field" data-type="radio"><span class="field-label">How comfortable are you with the command line?</span><div class="options inline"><label class="pill"><input type="radio" name="terminal-level" value="new"> What's a command line?</label><label class="pill"><input type="radio" name="terminal-level" value="beginner"> Beginner</label><label class="pill"><input type="radio" name="terminal-level" value="intermediate"> Intermediate</label><label class="pill"><input type="radio" name="terminal-level" value="advanced"> Advanced</label></div></div><p id="profileAdvice" role="status"></p>
+    </section>
+
+    <!-- ===================== 1. WARM-UP ===================== -->
+    <section class="ws-section" id="warmup" data-short="1. Warm-up" data-time="~10 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Step 1</span><h2>Warm-up</h2></div>
+        <span class="time-chip">~10 min</span>
+      </div>
+<p class="lede">Jot down 1–2 sentences on what you think each term means. If you are not sure, guess — we will figure it out together.</p><div class="field" data-type="textarea"><label class="field-label" for="warmup-term-0">AI</label><textarea id="warmup-term-0" name="warmup-term-0" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-1">LLM</label><textarea id="warmup-term-1" name="warmup-term-1" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-2">Token</label><textarea id="warmup-term-2" name="warmup-term-2" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-3">Agent</label><textarea id="warmup-term-3" name="warmup-term-3" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-4">Harness</label><textarea id="warmup-term-4" name="warmup-term-4" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-5">Markdown</label><textarea id="warmup-term-5" name="warmup-term-5" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-6">Shell</label><textarea id="warmup-term-6" name="warmup-term-6" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-7">TUI</label><textarea id="warmup-term-7" name="warmup-term-7" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-8">Skill</label><textarea id="warmup-term-8" name="warmup-term-8" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+<div class="field" data-type="textarea"><label class="field-label" for="warmup-term-9">Context Windows</label><textarea id="warmup-term-9" name="warmup-term-9" placeholder="One or two sentences — a guess is welcome."></textarea></div>    </section>
+
+    <!-- ===================== 2. SCENARIO ===================== -->
+    <section class="ws-section" id="scenario" data-short="2. The scenario" data-time="~15 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Step 2</span><h2>The scenario</h2></div>
+        <span class="time-chip">~15 min</span>
+      </div>
+      <p class="lede">A client runs a decade-old C# online store. They're commercial people, not engineers — but they vibe-coded a modern Python rewrite using tools like this. It mostly works. It's also pretty buggy. They won't rewrite from scratch (the custom styling is real investment) — they've brought "us" in to fix it and set up a better workflow.</p>
+
+<p class="reference"><strong>It mostly works, but it is buggy.</strong> Keep the styling and working shopping flow; fix the defects and improve the workflow.</p>
+
+      <p>Get the app running locally (see <a href="../python-eshop/README.md">python-eshop/README.md</a> for the full quick start) and click through the shopping flow before the retro discussion.</p>
+
+<details class="help"><summary>Detailed walkthrough setup — for your operating system</summary><div class="help-body" id="appSetup"></div></details>
+      <div class="field checklist" data-type="checkbox-group">
+        <span class="field-label">Walkthrough checklist</span>
+        <div class="options">
+          <label><input type="checkbox" name="scenario-check-backend"> Backend running (<code>uv run python run.py</code>)</label>
+          <label><input type="checkbox" name="scenario-check-frontend"> Frontend running (<code>npm run dev</code>)</label>
+          <label><input type="checkbox" name="scenario-check-login"> Logged in with the demo account</label>
+          <label><input type="checkbox" name="scenario-check-flow"> Walked: browse catalog → add to basket → checkout → view orders</label>
+        </div>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="scenario-first-impressions">First impressions — what feels solid, and where did something feel off (even before you know it's officially "a bug")?</label>
+        <textarea id="scenario-first-impressions" name="scenario-first-impressions" placeholder="e.g. the catalog pagination felt fine, but the basket count in the header..."></textarea>
+      </div>
+
+      <div class="field" data-type="text">
+        <label class="field-label" for="scenario-ux-detail">One detail the original C# shop probably handled differently</label>
+        <input type="text" id="scenario-ux-detail" name="scenario-ux-detail" placeholder="e.g. a real shipping address form instead of a hardcoded one">
+      </div>
+    </section>
+
+    <!-- ===================== 3. RETRO ===================== -->
+    <section class="ws-section" id="retro" data-short="3. Retro" data-time="~15 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Step 3</span><h2>Retro: what went wrong?</h2></div>
+        <span class="time-chip">~15 min</span>
+      </div>
+
+      <div class="quote-box">
+        <span class="eyebrow">Discussion</span>
+        Before any tooling is introduced — why does vibe-coded software end up like this, and how would <em>you</em> have approached it differently?
+      </div>
+
+      <p class="lede">The facilitator will open the floor. This discussion is what makes the skills pitch land next, so give it a real go before moving to the next slide.</p>
+
+      <div class="field" data-type="checkbox-group">
+        <span class="field-label">Tick any failure modes you suspect played a role</span>
+        <div class="options">
+          <label><input type="checkbox" name="retro-cause-no-spec"> No shared spec / requirements doc</label>
+          <label><input type="checkbox" name="retro-cause-no-plan"> No architectural plan before coding</label>
+          <label><input type="checkbox" name="retro-cause-no-tests"> No tests, so regressions go unnoticed</label>
+          <label><input type="checkbox" name="retro-cause-context"> Context ran out / earlier decisions got lost</label>
+          <label><input type="checkbox" name="retro-cause-no-review"> No code review step</label>
+          <label><input type="checkbox" name="retro-cause-one-shot"> Prompts were one-shot, not iterative</label>
+          <label><input type="checkbox" name="retro-cause-cant-read"> Couldn't read the generated code well enough to catch issues</label>
+          <label><input type="checkbox" name="retro-cause-other"> Something else</label>
+        </div>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="retro-approach">How would you have approached it differently, in a sentence or two?</label>
+        <textarea id="retro-approach" name="retro-approach"></textarea>
+      </div>
+
+      <div class="field" data-type="radio">
+        <span class="field-label">Gut call: is this mostly a tooling problem, or a process problem?</span>
+        <div class="options inline">
+          <label class="pill"><input type="radio" name="retro-tooling-vs-process" value="Mostly tooling"> Mostly tooling</label>
+          <label class="pill"><input type="radio" name="retro-tooling-vs-process" value="A bit of both"> A bit of both</label>
+          <label class="pill"><input type="radio" name="retro-tooling-vs-process" value="Mostly process"> Mostly process</label>
+          <label class="pill"><input type="radio" name="retro-tooling-vs-process" value="Not sure yet"> Not sure yet</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 4. SKILLS APPROACH ===================== -->
+    <section class="ws-section" id="skills-approach" data-short="4. The skills approach" data-time="~15 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Step 4</span><h2>Introducing the skills approach</h2></div>
+        <span class="time-chip">~15 min</span>
+      </div>
+      <p class="lede">Matt Pocock's skill set for Claude Code — structured, reusable workflows that sit on top of the model, designed to address exactly the failure modes from the retro.</p>
+
+      <div class="grid cols-2">
+        <div class="card"><h3><span class="tag">Helps</span></h3><p>Forces understanding before code, gives review a fixed point to check against, turns "vibing" into something repeatable.</p></div>
+        <div class="card"><h3><span class="tag alt">Gaps</span></h3><p>Doesn't replace judgement about scope — a skill is only as good as the person (or model) choosing when to invoke it.</p></div>
+      </div>
+
+<div class="quiz"><p class="quiz-q">Quick check 1: Do skills run automatically when relevant?</p><div class="quiz-actions"><button type="button" class="quiz-btn" data-correct="false">Always</button><button type="button" class="quiz-btn" data-correct="false">Never</button><button type="button" class="quiz-btn" data-correct="true">It depends</button></div><div class="quiz-feedback" hidden><p>It depends on the harness and skill settings. Most of Matt Pocock's skills require explicit invocation; others can be chosen by the model.</p><details id="invocationExample"><summary>Inspect Matt Pocock's Triage YAML</summary><p>From <a href="https://github.com/mattpocock/skills/blob/main/skills/engineering/triage/SKILL.md">Triage's SKILL.md</a> (excerpt):</p><pre>---
+name: triage
+disable-model-invocation: true
+---</pre><p>The matching <a href="https://github.com/mattpocock/skills/blob/main/skills/engineering/triage/agents/openai.yaml">Codex configuration</a>:</p><pre>policy:
+  allow_implicit_invocation: false</pre><p>Both settings require you to invoke Triage yourself. Check each skill rather than assuming the whole collection behaves the same way.</p></details></div></div>
+<div class="field" data-type="checkbox-single"><label><input type="checkbox" name="inspect-invocation" id="inspectInvocation"> Expand the YAML and check how invocation is controlled</label></div>
+<div class="quiz"><p class="quiz-q">Quick check 2: Skills load all the information from links at once, making them more useful.</p><div class="quiz-actions"><button type="button" class="quiz-btn" data-correct="false">True</button><button type="button" class="quiz-btn" data-correct="true">False</button></div><p class="quiz-feedback" hidden>False. Skills use progressive loading: metadata first, instructions when invoked, and linked references as needed. This gives you better control of the context window.</p></div>
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="skills-forward-look">Where do you think "Grill with Docs" will matter most for the bug you'll pick later?</label>
+        <p class="field-hint">A forward-looking guess — you'll come back and check yourself against this in Step 2.</p>
+        <textarea id="skills-forward-look" name="skills-forward-look"></textarea>
+      </div>
+    </section>
+
+    <!-- ===================== 5. SKILL SHORTLIST ===================== -->
+    <section class="ws-section" id="skill-shortlist" data-short="5. Pick your skills" data-time="~10 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Step 5</span><h2>Today's skill shortlist</h2></div>
+        <span class="time-chip">~10 min</span>
+      </div>
+      <p class="lede">One routing skill, one mandatory skill, and 2–3 more to match today's workflow. Go deep on a handful rather than a shallow tour of the whole set.</p>
+
+      <div class="grid cols-2">
+        <div class="card"><h3>🧭 Ask Matt</h3><p>A routing skill: describe your situation and it points you to whichever skill actually fits, instead of you guessing from a list of names.</p></div>
+        <div class="card"><h3>🛠️ Grill with Docs <span class="tag">Mandatory</span></h3><p>A relentless, structured interview about your plan or the codebase. Produces real artifacts (ADRs, a glossary) as it goes, and forces real understanding before anyone edits code.</p></div>
+      </div>
+
+      <h3>Pick 2–3 more</h3>
+      <div class="field" data-type="checkbox-group">
+        <span class="field-label" style="display:none;">Additional skills selected</span>
+        <div class="grid cols-3">
+          <div class="card skill-pick">
+            <input type="checkbox" id="skill-select-triage" name="skill-select-triage">
+            <h3><label for="skill-select-triage">Triage</label></h3>
+            <p>Turns a vague bug report into a structured investigation — reproduce it, narrow the layer, form a hypothesis — before anyone starts editing.</p>
+          </div>
+          <div class="card skill-pick">
+            <input type="checkbox" id="skill-select-wayfinder" name="skill-select-wayfinder">
+            <h3><label for="skill-select-wayfinder">Wayfinder</label></h3>
+            <p>Breaks work too big for one sitting into a shared map of tickets, so a team (or future-you) can pick it up without re-deriving the plan.</p>
+          </div>
+          <div class="card skill-pick">
+            <input type="checkbox" id="skill-select-codereview" name="skill-select-codereview">
+            <h3><label for="skill-select-codereview">Code Review</label></h3>
+            <p>Gives a diff a fixed point to be checked against, instead of a reviewer just vibing a "looks fine to me."</p>
+          </div>
+          <div class="card skill-pick">
+            <input type="checkbox" id="skill-select-implement" name="skill-select-implement">
+            <h3><label for="skill-select-implement">Implement</label></h3>
+            <p>A build-and-check loop for actually writing the fix — verifying as it goes, rather than declaring victory after one pass.</p>
+          </div>
+          <div class="card skill-pick">
+            <input type="checkbox" id="skill-select-prototype" name="skill-select-prototype">
+            <h3><label for="skill-select-prototype">Prototype</label></h3>
+            <p>A deliberately throwaway spike to de-risk an approach or answer a design question before committing to it for real.</p>
+          </div>
+        </div>
+      </div>
+      <p class="field-hint" id="skillCountHint">You've selected 0 additional skill(s). Today's guidance: 2–3 total.</p>
+
+      <div class="field" data-type="text">
+        <label class="field-label" for="skill-install-command">Install command used <span style="font-weight:400;color:var(--muted);">(ask your facilitator)</span></label>
+        <input type="text" id="skill-install-command" name="skill-install-command" placeholder="paste the exact command here">
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="skill-install-notes">Open the YAML frontmatter of one chosen skill with your neighbour. What's actually declared there, and what did installing it do / where did the files land?</label>
+        <textarea id="skill-install-notes" name="skill-install-notes"></textarea>
+      </div>
+
+      <details class="help help-beginner">
+        <summary>🧭 New to this? What's "YAML frontmatter" and why does it matter</summary>
+        <div class="help-body">Most of these skills store their metadata (name, description, when to use it) in a small header block at the top of the file, written in YAML — think of it like the label on a filing folder. The model reads <em>just the header</em> first to decide whether a skill is relevant. Only once it's actually invoked does the full body (the real instructions) get loaded. That's "progressive loading" — it keeps the model's context window from being clogged with instructions for skills it isn't using.</div>
+      </details>
+<div id="selectedSkillGuidance" class="reference"></div><details class="help help-advanced"><summary>🚀 Stretch: read the skills, then rate them against your expectations</summary><div class="help-body"><p>Open the Markdown in at least one chosen skill's SKILL.md. Review the instructions and follow a reference link. Rate each skill you inspect on these four scales; leave unread skills blank.</p><div data-review-skill="ask-matt"><h4>Ask Matt</h4><div class="field" data-type="textarea"><label class="field-label" for="review-ask-matt">What did you expect, and what did the Markdown actually say?</label><textarea id="review-ask-matt" name="review-ask-matt" placeholder="One or two sentences — a guess is welcome."></textarea></div><div class="field" data-type="select"><label class="field-label" for="scale-ask-matt-0">Ask Matt: Explicit ↔ Implicit</label><select id="scale-ask-matt-0" name="scale-ask-matt-0"><option value="">Rate after reading</option><option>Explicit</option><option>Mostly Explicit</option><option>In between</option><option>Mostly Implicit</option><option>Implicit</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-ask-matt-1">Ask Matt: Detailed ↔ Concise</label><select id="scale-ask-matt-1" name="scale-ask-matt-1"><option value="">Rate after reading</option><option>Detailed</option><option>Mostly Detailed</option><option>In between</option><option>Mostly Concise</option><option>Concise</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-ask-matt-2">Ask Matt: Structured ↔ Loose</label><select id="scale-ask-matt-2" name="scale-ask-matt-2"><option value="">Rate after reading</option><option>Structured</option><option>Mostly Structured</option><option>In between</option><option>Mostly Loose</option><option>Loose</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-ask-matt-3">Ask Matt: Self contained ↔ Cross referenced</label><select id="scale-ask-matt-3" name="scale-ask-matt-3"><option value="">Rate after reading</option><option>Self contained</option><option>Mostly Self contained</option><option>In between</option><option>Mostly Cross referenced</option><option>Cross referenced</option></select></div></div><div data-review-skill="grill-with-docs"><h4>Grill with Docs</h4><div class="field" data-type="textarea"><label class="field-label" for="review-grill-with-docs">What did you expect, and what did the Markdown actually say?</label><textarea id="review-grill-with-docs" name="review-grill-with-docs" placeholder="One or two sentences — a guess is welcome."></textarea></div><div class="field" data-type="select"><label class="field-label" for="scale-grill-with-docs-0">Grill with Docs: Explicit ↔ Implicit</label><select id="scale-grill-with-docs-0" name="scale-grill-with-docs-0"><option value="">Rate after reading</option><option>Explicit</option><option>Mostly Explicit</option><option>In between</option><option>Mostly Implicit</option><option>Implicit</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-grill-with-docs-1">Grill with Docs: Detailed ↔ Concise</label><select id="scale-grill-with-docs-1" name="scale-grill-with-docs-1"><option value="">Rate after reading</option><option>Detailed</option><option>Mostly Detailed</option><option>In between</option><option>Mostly Concise</option><option>Concise</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-grill-with-docs-2">Grill with Docs: Structured ↔ Loose</label><select id="scale-grill-with-docs-2" name="scale-grill-with-docs-2"><option value="">Rate after reading</option><option>Structured</option><option>Mostly Structured</option><option>In between</option><option>Mostly Loose</option><option>Loose</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-grill-with-docs-3">Grill with Docs: Self contained ↔ Cross referenced</label><select id="scale-grill-with-docs-3" name="scale-grill-with-docs-3"><option value="">Rate after reading</option><option>Self contained</option><option>Mostly Self contained</option><option>In between</option><option>Mostly Cross referenced</option><option>Cross referenced</option></select></div></div><div data-review-skill="triage"><h4>Triage</h4><div class="field" data-type="textarea"><label class="field-label" for="review-triage">What did you expect, and what did the Markdown actually say?</label><textarea id="review-triage" name="review-triage" placeholder="One or two sentences — a guess is welcome."></textarea></div><div class="field" data-type="select"><label class="field-label" for="scale-triage-0">Triage: Explicit ↔ Implicit</label><select id="scale-triage-0" name="scale-triage-0"><option value="">Rate after reading</option><option>Explicit</option><option>Mostly Explicit</option><option>In between</option><option>Mostly Implicit</option><option>Implicit</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-triage-1">Triage: Detailed ↔ Concise</label><select id="scale-triage-1" name="scale-triage-1"><option value="">Rate after reading</option><option>Detailed</option><option>Mostly Detailed</option><option>In between</option><option>Mostly Concise</option><option>Concise</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-triage-2">Triage: Structured ↔ Loose</label><select id="scale-triage-2" name="scale-triage-2"><option value="">Rate after reading</option><option>Structured</option><option>Mostly Structured</option><option>In between</option><option>Mostly Loose</option><option>Loose</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-triage-3">Triage: Self contained ↔ Cross referenced</label><select id="scale-triage-3" name="scale-triage-3"><option value="">Rate after reading</option><option>Self contained</option><option>Mostly Self contained</option><option>In between</option><option>Mostly Cross referenced</option><option>Cross referenced</option></select></div></div><div data-review-skill="wayfinder"><h4>Wayfinder</h4><div class="field" data-type="textarea"><label class="field-label" for="review-wayfinder">What did you expect, and what did the Markdown actually say?</label><textarea id="review-wayfinder" name="review-wayfinder" placeholder="One or two sentences — a guess is welcome."></textarea></div><div class="field" data-type="select"><label class="field-label" for="scale-wayfinder-0">Wayfinder: Explicit ↔ Implicit</label><select id="scale-wayfinder-0" name="scale-wayfinder-0"><option value="">Rate after reading</option><option>Explicit</option><option>Mostly Explicit</option><option>In between</option><option>Mostly Implicit</option><option>Implicit</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-wayfinder-1">Wayfinder: Detailed ↔ Concise</label><select id="scale-wayfinder-1" name="scale-wayfinder-1"><option value="">Rate after reading</option><option>Detailed</option><option>Mostly Detailed</option><option>In between</option><option>Mostly Concise</option><option>Concise</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-wayfinder-2">Wayfinder: Structured ↔ Loose</label><select id="scale-wayfinder-2" name="scale-wayfinder-2"><option value="">Rate after reading</option><option>Structured</option><option>Mostly Structured</option><option>In between</option><option>Mostly Loose</option><option>Loose</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-wayfinder-3">Wayfinder: Self contained ↔ Cross referenced</label><select id="scale-wayfinder-3" name="scale-wayfinder-3"><option value="">Rate after reading</option><option>Self contained</option><option>Mostly Self contained</option><option>In between</option><option>Mostly Cross referenced</option><option>Cross referenced</option></select></div></div><div data-review-skill="codereview"><h4>Code Review</h4><div class="field" data-type="textarea"><label class="field-label" for="review-codereview">What did you expect, and what did the Markdown actually say?</label><textarea id="review-codereview" name="review-codereview" placeholder="One or two sentences — a guess is welcome."></textarea></div><div class="field" data-type="select"><label class="field-label" for="scale-codereview-0">Code Review: Explicit ↔ Implicit</label><select id="scale-codereview-0" name="scale-codereview-0"><option value="">Rate after reading</option><option>Explicit</option><option>Mostly Explicit</option><option>In between</option><option>Mostly Implicit</option><option>Implicit</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-codereview-1">Code Review: Detailed ↔ Concise</label><select id="scale-codereview-1" name="scale-codereview-1"><option value="">Rate after reading</option><option>Detailed</option><option>Mostly Detailed</option><option>In between</option><option>Mostly Concise</option><option>Concise</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-codereview-2">Code Review: Structured ↔ Loose</label><select id="scale-codereview-2" name="scale-codereview-2"><option value="">Rate after reading</option><option>Structured</option><option>Mostly Structured</option><option>In between</option><option>Mostly Loose</option><option>Loose</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-codereview-3">Code Review: Self contained ↔ Cross referenced</label><select id="scale-codereview-3" name="scale-codereview-3"><option value="">Rate after reading</option><option>Self contained</option><option>Mostly Self contained</option><option>In between</option><option>Mostly Cross referenced</option><option>Cross referenced</option></select></div></div><div data-review-skill="implement"><h4>Implement</h4><div class="field" data-type="textarea"><label class="field-label" for="review-implement">What did you expect, and what did the Markdown actually say?</label><textarea id="review-implement" name="review-implement" placeholder="One or two sentences — a guess is welcome."></textarea></div><div class="field" data-type="select"><label class="field-label" for="scale-implement-0">Implement: Explicit ↔ Implicit</label><select id="scale-implement-0" name="scale-implement-0"><option value="">Rate after reading</option><option>Explicit</option><option>Mostly Explicit</option><option>In between</option><option>Mostly Implicit</option><option>Implicit</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-implement-1">Implement: Detailed ↔ Concise</label><select id="scale-implement-1" name="scale-implement-1"><option value="">Rate after reading</option><option>Detailed</option><option>Mostly Detailed</option><option>In between</option><option>Mostly Concise</option><option>Concise</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-implement-2">Implement: Structured ↔ Loose</label><select id="scale-implement-2" name="scale-implement-2"><option value="">Rate after reading</option><option>Structured</option><option>Mostly Structured</option><option>In between</option><option>Mostly Loose</option><option>Loose</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-implement-3">Implement: Self contained ↔ Cross referenced</label><select id="scale-implement-3" name="scale-implement-3"><option value="">Rate after reading</option><option>Self contained</option><option>Mostly Self contained</option><option>In between</option><option>Mostly Cross referenced</option><option>Cross referenced</option></select></div></div><div data-review-skill="prototype"><h4>Prototype</h4><div class="field" data-type="textarea"><label class="field-label" for="review-prototype">What did you expect, and what did the Markdown actually say?</label><textarea id="review-prototype" name="review-prototype" placeholder="One or two sentences — a guess is welcome."></textarea></div><div class="field" data-type="select"><label class="field-label" for="scale-prototype-0">Prototype: Explicit ↔ Implicit</label><select id="scale-prototype-0" name="scale-prototype-0"><option value="">Rate after reading</option><option>Explicit</option><option>Mostly Explicit</option><option>In between</option><option>Mostly Implicit</option><option>Implicit</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-prototype-1">Prototype: Detailed ↔ Concise</label><select id="scale-prototype-1" name="scale-prototype-1"><option value="">Rate after reading</option><option>Detailed</option><option>Mostly Detailed</option><option>In between</option><option>Mostly Concise</option><option>Concise</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-prototype-2">Prototype: Structured ↔ Loose</label><select id="scale-prototype-2" name="scale-prototype-2"><option value="">Rate after reading</option><option>Structured</option><option>Mostly Structured</option><option>In between</option><option>Mostly Loose</option><option>Loose</option></select></div><div class="field" data-type="select"><label class="field-label" for="scale-prototype-3">Prototype: Self contained ↔ Cross referenced</label><select id="scale-prototype-3" name="scale-prototype-3"><option value="">Rate after reading</option><option>Self contained</option><option>Mostly Self contained</option><option>In between</option><option>Mostly Cross referenced</option><option>Cross referenced</option></select></div></div></div></details>    </section>
+
+    <!-- ===================== 6. STEP 1 SETUP ===================== -->
+    <section class="ws-section" id="practical-setup" data-short="Practical 1 · Setup" data-time="~15 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Practical · Step 1</span><h2>Set up the skills</h2></div>
+        <span class="time-chip">~15 min</span>
+      </div>
+      <p class="lede">Install what you picked above — then confirm you actually understand what setup did, rather than just following steps blindly.</p>
+
+<div class="reference" id="agentSetup"></div>
+      <div class="field checklist" data-type="checkbox-group">
+        <span class="field-label">Self-check — tick once true for you</span>
+        <div class="options">
+          <label><input type="checkbox" name="setup-check-location"> I can point to where the skill files actually live on disk</label>
+          <label><input type="checkbox" name="setup-check-manual"> I checked which skills require explicit invocation and which allow model invocation</label>
+          <label><input type="checkbox" name="setup-check-augment"> I understand skills augment the model; they don't replace judgement</label>
+          <label><input type="checkbox" name="setup-check-progressive"> I understand why progressive loading (header vs. full body) matters for context</label>
+        </div>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="setup-notes">Setup notes — anything that surprised you, or a gotcha worth flagging for someone else trying this later?</label>
+        <textarea id="setup-notes" name="setup-notes"></textarea>
+      </div>
+    </section>
+
+    <!-- ===================== 7. STEP 2 TRIAGE ===================== -->
+    <section class="ws-section" id="practical-triage" data-short="Practical 2 · Triage" data-time="~25 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Practical · Step 2</span><h2>Triage a bug (optional)</h2></div>
+        <span class="time-chip">~25 min</span>
+      </div>
+      <p class="lede">Choose from the <a href="https://github.com/perth-ai/workshop-mp-skills-for-ai-native-devs/issues">existing bug list</a>, or use a bug you found yourself. Start by describing it <strong>in your own words</strong>. Triage can help turn that into a useful report. Using the Triage skill is optional; you can take your description straight to planning the fix.</p>
+
+<div class="reference" id="triageGuidance"></div><div class="field" data-type="textarea"><label class="field-label" for="bug-own-words">Describe the bug in your own words</label><textarea id="bug-own-words" name="bug-own-words" placeholder="One or two sentences — a guess is welcome."></textarea></div>
+      <div class="reference">
+        <strong>Quick architecture reference</strong> (python-eshop): <code>Router → Service → DB Client → SQLite</code>, with a React/Vite frontend talking to a FastAPI backend over JSON.
+        <table>
+          <tr><th>Layer</th><th>Lives in</th><th>Responsibility</th></tr>
+          <tr><td>Frontend</td><td><code>frontend/src/</code></td><td>UI, client-side state, API calls</td></tr>
+          <tr><td>Router</td><td><code>backend/routers/</code></td><td>HTTP, validation, auth headers</td></tr>
+          <tr><td>Service</td><td><code>backend/services/</code></td><td>Basket merge, checkout rules, business logic</td></tr>
+          <tr><td>DB client</td><td><code>backend/db/client.py</code></td><td>All SQL queries against SQLite</td></tr>
+        </table>
+      </div>
+
+      <div class="field" data-type="text">
+        <label class="field-label" for="triage-bug-title">Bug you picked (short title)</label>
+        <input type="text" id="triage-bug-title" name="triage-bug-title" placeholder="e.g. basket count doesn't update after checkout">
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="triage-repro">Steps to reproduce</label>
+        <textarea id="triage-repro" name="triage-repro"></textarea>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="triage-expected-actual">Expected vs. actual behaviour</label>
+        <textarea id="triage-expected-actual" name="triage-expected-actual"></textarea>
+      </div>
+
+      <div class="field" data-type="radio">
+        <span class="field-label">Which layer do you suspect, before running the skill?</span>
+        <div class="options inline">
+          <label class="pill"><input type="radio" name="triage-layer" value="Frontend (React)"> Frontend (React)</label>
+          <label class="pill"><input type="radio" name="triage-layer" value="Router (FastAPI)"> Router (FastAPI)</label>
+          <label class="pill"><input type="radio" name="triage-layer" value="Service (business logic)"> Service (business logic)</label>
+          <label class="pill"><input type="radio" name="triage-layer" value="DB client / SQL"> DB client / SQL</label>
+          <label class="pill"><input type="radio" name="triage-layer" value="Not sure yet"> Not sure yet</label>
+        </div>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="triage-hypothesis">Your hypothesis before running the triage skill</label>
+        <textarea id="triage-hypothesis" name="triage-hypothesis"></textarea>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="triage-surfaced">After running it — what did the triage skill surface that you hadn't considered?</label>
+        <textarea id="triage-surfaced" name="triage-surfaced"></textarea>
+      </div>
+
+      <div class="field" data-type="radio">
+        <span class="field-label">Confidence in the root cause, now</span>
+        <div class="options inline">
+          <label class="pill"><input type="radio" name="triage-confidence" value="Low"> Low</label>
+          <label class="pill"><input type="radio" name="triage-confidence" value="Medium"> Medium</label>
+          <label class="pill"><input type="radio" name="triage-confidence" value="High"> High</label>
+        </div>
+      </div>
+
+      <div class="quote-box">
+        <span class="eyebrow">Facilitator discussion</span>
+        How does this same workflow hold up when it's one bug, vs. a whole backlog?
+      </div>
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="triage-backlog-reflection">Your take on the backlog / harness question</label>
+        <textarea id="triage-backlog-reflection" name="triage-backlog-reflection"></textarea>
+      </div>
+    </section>
+
+    <!-- ===================== 8. STEP 3 IMPLEMENT ===================== -->
+    <section class="ws-section" id="practical-implement" data-short="Practical 3 · Implement" data-time="~45 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Practical · Step 3</span><h2>Implement the fix</h2></div>
+        <span class="time-chip">~45 min</span>
+      </div>
+      <p class="lede">Build the fix and push it to a branch, using the skills from Step 1 — e.g. an implement/code-review skill for the build-and-check loop.</p>
+
+<div class="reference" id="implementGuidance"></div>
+      <div class="field" data-type="text">
+        <label class="field-label" for="implement-branch">Branch name</label>
+        <input type="text" id="implement-branch" name="implement-branch" placeholder="e.g. fix/basket-count-after-checkout">
+      </div>
+
+      <div class="field checklist" data-type="checkbox-group">
+        <span class="field-label">Before calling it done</span>
+        <div class="options">
+          <label><input type="checkbox" name="implement-check-manual"> Manually clicked through the flow again</label>
+          <label><input type="checkbox" name="implement-check-backend"> Backend starts clean</label>
+          <label><input type="checkbox" name="implement-check-frontend"> Frontend builds clean</label>
+          <label><input type="checkbox" name="implement-check-test"> Added or updated a test</label>
+          <label><input type="checkbox" name="implement-check-pushed"> Pushed to a branch</label>
+          <label><input type="checkbox" name="implement-check-pr"> Opened a PR</label>
+        </div>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="implement-summary">Summarize the fix in a sentence or two — good enough for a commit message or PR description</label>
+        <textarea id="implement-summary" name="implement-summary"></textarea>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="implement-catch">What did the implement / code-review skill catch that a single plain prompt probably wouldn't have?</label>
+        <textarea id="implement-catch" name="implement-catch"></textarea>
+      </div>
+
+      <div class="field" data-type="range-pair">
+        <span class="field-label">Trust in the change — before you started, vs. once it was done</span>
+        <div class="range-pair">
+          <div>
+            <div class="range-label">Before (1 = none, 5 = total)</div>
+            <div class="range-field"><input type="range" id="implement-trust-before" name="implement-trust-before" min="1" max="5" value="3"><output></output></div>
+          </div>
+          <div>
+            <div class="range-label">After (1 = none, 5 = total)</div>
+            <div class="range-field"><input type="range" id="implement-trust-after" name="implement-trust-after" min="1" max="5" value="3"><output></output></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 9. STEP 4 REFLECT ===================== -->
+    <section class="ws-section" id="practical-reflect" data-short="Practical 4 · Reflect" data-time="~15 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Practical · Step 4</span><h2>Discuss and reflect</h2></div>
+        <span class="time-chip">~15 min</span>
+      </div>
+      <p class="lede">Close the practical component as a group. Write your own answers first, then see how they land against what the room says.</p>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="reflect-caught">What did the skills catch that plain prompting wouldn't have?</label>
+        <textarea id="reflect-caught" name="reflect-caught"></textarea>
+      </div>
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="reflect-friction">Where did they get in the way, or slow you down?</label>
+        <textarea id="reflect-friction" name="reflect-friction"></textarea>
+      </div>
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="reflect-change">What would you change about your setup going forward?</label>
+        <textarea id="reflect-change" name="reflect-change"></textarea>
+      </div>
+      <div class="field" data-type="radio">
+        <span class="field-label">Overall — would you reach for this skill set again on a real task?</span>
+        <div class="options inline">
+          <label class="pill"><input type="radio" name="reflect-would-reuse" value="Definitely"> Definitely</label>
+          <label class="pill"><input type="radio" name="reflect-would-reuse" value="Probably, with changes"> Probably, with changes</label>
+          <label class="pill"><input type="radio" name="reflect-would-reuse" value="Not sure"> Not sure</label>
+          <label class="pill"><input type="radio" name="reflect-would-reuse" value="Probably not"> Probably not</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 10. BEYOND TODAY ===================== -->
+    <section class="ws-section" id="beyond" data-short="Beyond today" data-time="~10 min">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Wrap-up</span><h2>Beyond today</h2></div>
+        <span class="time-chip">~10 min</span>
+      </div>
+      <p class="lede">We only went deep on a handful of skills. Worth trying next, on your own:</p>
+
+      <div class="grid cols-3">
+        <div class="card"><h3>Grill with Docs</h3><p>The wider family beyond today's mandatory pass.</p></div>
+        <div class="card"><h3>Teach</h3><p>Turns a codebase walkthrough into a guided lesson — useful once you know a part of the system and want to actually teach it.</p></div>
+        <div class="card"><h3>Wayfinder</h3><p>Plans work too big for one session as a shared map of tickets.</p></div>
+      </div>
+
+      <div class="field" data-type="checkbox-group">
+        <span class="field-label">Pick 1–3 things to actually try this week</span>
+        <div class="options">
+          <label><input type="checkbox" name="beyond-try-teach"> Try Teach on a part of the codebase I know well</label>
+          <label><input type="checkbox" name="beyond-try-grill"> Run Grill with Docs on a personal project</label>
+          <label><input type="checkbox" name="beyond-try-wayfinder"> Try Wayfinder on something too big for one sitting</label>
+          <label><input type="checkbox" name="beyond-try-write"> Write a mini-skill of my own</label>
+          <label><input type="checkbox" name="beyond-try-share"> Share this workshop with a teammate</label>
+          <label><input type="checkbox" name="beyond-try-other"> Something else</label>
+        </div>
+      </div>
+
+      <div class="field" data-type="textarea">
+        <label class="field-label" for="beyond-commitment">One-sentence commitment — what will you actually do, by when?</label>
+        <textarea id="beyond-commitment" name="beyond-commitment" placeholder="e.g. Run Grill with Docs on my side project by Friday"></textarea>
+      </div>
+    </section>
+
+<!-- ===================== JOURNAL / EXPORT ===================== -->
+    <section class="ws-section" id="journal" data-short="Your workshop journal" data-time="">
+      <div class="section-head">
+        <div class="headline"><span class="eyebrow">Last step</span><h2>Your workshop journal</h2></div>
+      </div>
+      <p class="lede">A quick preview of a few things you've written, pulled live from above — then take it with you.</p>
+
+      <dl class="journal-preview" id="journalPreview">
+        <dt>Bug triaged</dt><dd class="empty" data-preview="triage-bug-title">—</dd>
+        <dt>Fix summary</dt><dd class="empty" data-preview="implement-summary">—</dd>
+        <dt>What skills caught that prompting wouldn't</dt><dd class="empty" data-preview="reflect-caught">—</dd>
+        <dt>This week's commitment</dt><dd class="empty" data-preview="beyond-commitment">—</dd>
+      </dl>
+
+      <div class="export-actions">
+        <button class="btn primary" id="exportMdBtn2">⤓ Export full notes (.md)</button>
+        <button class="btn" id="copyMdBtn">📋 Copy Markdown</button>
+        <button class="btn small" id="exportJsonBtn">⤓ Backup (.json)</button>
+        <label class="btn small" style="display:inline-flex;align-items:center;cursor:pointer;">
+          ⤒ Restore backup
+          <input type="file" id="importJsonInput" accept="application/json" style="display:none;">
+        </label>
+        <button class="btn small danger" id="resetBtn">🗑 Reset all answers</button>
+      </div>
+
+      <div class="privacy-note">
+        <span>🔒</span>
+        <span>This file never leaves your machine until you choose to export or copy it. The Markdown export is yours to keep, paste into a wiki, or send to a teammate — there's no account, no sign-in, and nothing uploaded.</span>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      Perth AI Club · Skills for AI-Native Devs workshop · see <code>README.md</code> and <code>workshop/presentation.html</code> for the rest of the materials.
+    </footer>
+
+<nav class="slide-nav" aria-label="Workshop slides"><button class="btn" id="previousSlide">← Previous</button><span id="slidePosition" aria-live="polite"></span><button class="btn primary" id="nextSlide">Next →</button></nav>
+<p class="field-hint">Setup guidance checked 25 October 2026. Sources: <a href="https://code.claude.com/docs/en/skills">Claude skills</a> · <a href="https://developers.openai.com/codex/skills/">OpenAI skills</a> · <a href="https://github.com/mattpocock/skills">Matt Pocock</a>.</p>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'mp-skills-workshop-handout-v1';
+
+  // ---------- Generic state persistence (by [name]) ----------
+  function collectState() {
+    var state = {};
+    document.querySelectorAll('[name]').forEach(function (el) {
+      if (el.type === 'radio') {
+        if (el.checked) state[el.name] = el.value;
+      } else if (el.type === 'checkbox') {
+        state[el.name] = el.checked;
+      } else {
+        state[el.name] = el.value;
+      }
+    });
+    return state;
+  }
+
+  function applyState(state) {
+    if (!state) return;
+    document.querySelectorAll('[name]').forEach(function (el) {
+      var v = state[el.name];
+      if (v === undefined) return;
+      if (el.type === 'radio') {
+        el.checked = (el.value === v);
+      } else if (el.type === 'checkbox') {
+        el.checked = !!v;
+      } else {
+        el.value = v;
+      }
+    });
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  var lastSavedAt = null;
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(collectState()));
+      lastSavedAt = new Date();
+      updateSaveIndicator();
+    } catch (e) { /* storage unavailable — fail silently, export still works */ }
+  }
+
+  function updateSaveIndicator() {
+    var el = document.getElementById('saveIndicator');
+    if (!lastSavedAt) { el.textContent = 'not saved yet'; return; }
+    el.textContent = 'saved ' + lastSavedAt.toLocaleTimeString();
+  }
+
+  // ---------- Field helpers for export + progress ----------
+  function fieldAnswered(field) {
+    var type = field.dataset.type;
+    if (type === 'text') {
+      var t = field.querySelector('input[type="text"], input[type="date"]');
+      return !!(t && t.value.trim());
+    }
+    if (type === 'textarea') {
+      var ta = field.querySelector('textarea');
+      return !!(ta && ta.value.trim());
+    }
+    if (type === 'radio') {
+      return !!field.querySelector('input[type="radio"]:checked');
+    }
+    if (type === 'checkbox-group') {
+      return !!field.querySelector('input[type="checkbox"]:checked');
+    }
+    if (type === 'checkbox-single') {
+      var cb = field.querySelector('input[type="checkbox"]');
+      return !!(cb && cb.checked);
+    }
+    if (type === 'select') {
+      var s = field.querySelector('select');
+      return !!(s && s.value !== '');
+    }
+    if (type === 'range' || type === 'range-pair') {
+      return true;
+    }
+    return false;
+  }
+
+  function checkboxLabelText(cb) {
+    var lbl = cb.closest('label');
+    if (lbl) return lbl.textContent.trim();
+    if (cb.id) {
+      var byFor = document.querySelector('label[for="' + cb.id + '"]');
+      if (byFor) return byFor.textContent.trim();
+    }
+    return cb.name;
+  }
+
+  function fieldLabelText(field) {
+    var label = field.querySelector('.field-label');
+    return label ? label.textContent.trim() : (field.dataset.label || '');
+  }
+
+  function renderFieldMarkdown(field, lines) {
+    var type = field.dataset.type;
+    var label = fieldLabelText(field);
+    if (!label) return;
+    lines.push('**' + label + '**');
+    if (type === 'text') {
+      var t = field.querySelector('input[type="text"], input[type="date"]');
+      lines.push(t && t.value.trim() ? t.value.trim() : '_(not answered)_');
+    } else if (type === 'textarea') {
+      var ta = field.querySelector('textarea');
+      lines.push(ta && ta.value.trim() ? ta.value.trim() : '_(not answered)_');
+    } else if (type === 'radio') {
+      var checked = field.querySelector('input[type="radio"]:checked');
+      lines.push(checked ? checked.value : '_(not answered)_');
+    } else if (type === 'checkbox-group') {
+      var any = false;
+      field.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+        any = true;
+        lines.push('- [' + (cb.checked ? 'x' : ' ') + '] ' + checkboxLabelText(cb));
+      });
+      if (!any) lines.push('_(no options)_');
+    } else if (type === 'checkbox-single') {
+      var cb2 = field.querySelector('input[type="checkbox"]');
+      lines.push(cb2 && cb2.checked ? (field.dataset.yes || 'Yes') : (field.dataset.no || 'No'));
+    } else if (type === 'select') {
+      var s2 = field.querySelector('select');
+      lines.push(s2 && s2.value ? s2.options[s2.selectedIndex].text : '_(not answered)_');
+    } else if (type === 'range') {
+      var r = field.querySelector('input[type="range"]');
+      lines.push(r ? (r.value + (field.dataset.suffix || '')) : '_(not answered)_');
+    } else if (type === 'range-pair') {
+      var ranges = field.querySelectorAll('input[type="range"]');
+      if (ranges.length === 2) {
+        lines.push('Before: ' + ranges[0].value + ' → After: ' + ranges[1].value);
+      }
+    }
+    lines.push('');
+  }
+
+  function buildMarkdown() {
+    var lines = [];
+    var name = (document.querySelector('[name="participant-name"]') || {}).value || '';
+    var date = (document.querySelector('[name="session-date"]') || {}).value || '';
+    lines.push('# Skills for AI-Native Devs — Workshop Notes');
+    lines.push('');
+    lines.push('- **Participant:** ' + (name.trim() || '_(not provided)_'));
+    lines.push('- **Date:** ' + (date.trim() || '_(not provided)_'));
+    lines.push('- **Exported:** ' + new Date().toLocaleString());
+    lines.push('');
+    document.querySelectorAll('.ws-section').forEach(function (section) {
+      if (section.id === 'journal') return; // nothing to export here, it's just controls
+      var h2 = section.querySelector('.section-head h2, h1');
+      var title = section.dataset.exportTitle || (h2 ? h2.textContent.trim() : section.id);
+      lines.push('## ' + title);
+      lines.push('');
+      section.querySelectorAll('.field').forEach(function (field) {
+        renderFieldMarkdown(field, lines);
+      });
+    });
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  }
+
+  function slug(s) {
+    return (s || 'participant').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'participant';
+  }
+
+  function download(filename, text, mime) {
+    var blob = new Blob([text], { type: mime + ';charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function exportMarkdown() {
+    var md = buildMarkdown();
+    var name = (document.querySelector('[name="participant-name"]') || {}).value || '';
+    var dateStr = new Date().toISOString().slice(0, 10);
+    download('mp-skills-workshop-notes-' + slug(name) + '-' + dateStr + '.md', md, 'text/markdown');
+    toast('📝 Downloaded your workshop notes as Markdown');
+  }
+
+  function copyMarkdown() {
+    var md = buildMarkdown();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(md).then(function () {
+        toast('📋 Copied Markdown to clipboard');
+      }, function () {
+        toast('Could not copy — try Export instead');
+      });
+    } else {
+      toast('Clipboard not available — try Export instead');
+    }
+  }
+
+  function exportJson() {
+    download('mp-skills-workshop-backup.json', JSON.stringify(collectState(), null, 2), 'application/json');
+    toast('⤓ Backup downloaded');
+  }
+
+  function importJsonFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var state = JSON.parse(reader.result);
+        applyState(state);
+        saveState();
+        refreshAll();
+        toast('⤒ Backup restored');
+      } catch (e) {
+        toast('Could not read that backup file');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function resetAll() {
+    if (!confirm('This clears every answer in this handout from this browser. This cannot be undone. Continue?')) return;
+    document.querySelectorAll('[name]').forEach(function (el) {
+      if (el.type === 'radio' || el.type === 'checkbox') { el.checked = false; }
+      else { el.value = ''; }
+    });
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    lastSavedAt = null;
+    refreshAll();
+    toast('🗑 Cleared — fresh start');
+  }
+
+  // ---------- Toast ----------
+  var toastTimer = null;
+  function toast(msg) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2600);
+  }
+
+  // ---------- Progress ----------
+  function updateProgress() {
+    var allFields = Array.prototype.slice.call(document.querySelectorAll('.field'));
+    var totalAnswered = 0;
+    allFields.forEach(function (f) { if (fieldAnswered(f)) totalAnswered++; });
+    var pct = allFields.length ? Math.round((totalAnswered / allFields.length) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+
+    document.querySelectorAll('.toc-item').forEach(function (item) {
+      var sectionId = item.dataset.target;
+      var section = document.getElementById(sectionId);
+      if (!section) return;
+      var fields = section.querySelectorAll('.field');
+      var answered = 0;
+      fields.forEach(function (f) { if (fieldAnswered(f)) answered++; });
+      var spct = fields.length ? Math.round((answered / fields.length) * 100) : 0;
+      var bar = item.querySelector('.mini-bar span');
+      if (bar) bar.style.width = spct + '%';
+    });
+  }
+
+  // ---------- Skill selection counter ----------
+  function updateSkillCount() {
+    var boxes = document.querySelectorAll('[name^="skill-select-"]');
+    var count = 0;
+    boxes.forEach(function (b) { if (b.checked) count++; });
+    var hint = document.getElementById('skillCountHint');
+    if (!hint) return;
+    hint.textContent = "You've selected " + count + ' additional skill(s). Today\'s guidance: 2–3 total.';
+    hint.style.color = (count >= 2 && count <= 3) ? 'var(--ok)' : (count === 0 ? 'var(--muted)' : 'var(--warn)');
+  }
+
+  // ---------- Range outputs ----------
+  function updateRangeOutputs() {
+    document.querySelectorAll('.range-field input[type="range"]').forEach(function (r) {
+      var out = r.parentElement.querySelector('output');
+      if (out) out.textContent = r.value;
+    });
+  }
+
+  // ---------- Level toggles ----------
+  function applyLevel(level) {
+    var openBeginner = (level === 'new');
+    var openAdvanced = (level === 'power' || level === 'daily');
+    document.querySelectorAll('details.help-beginner').forEach(function (d) { d.open = openBeginner; });
+    document.querySelectorAll('details.help-advanced').forEach(function (d) { d.open = openAdvanced; });
+  }
+
+  // ---------- Journal preview ----------
+  function renderJournalPreview() {
+    document.querySelectorAll('#journalPreview [data-preview]').forEach(function (dd) {
+      var name = dd.dataset.preview;
+      var field = document.querySelector('[name="' + name + '"]');
+      var val = field ? field.value.trim() : '';
+      if (val) {
+        dd.textContent = val;
+        dd.classList.remove('empty');
+      } else {
+        dd.textContent = '—';
+        dd.classList.add('empty');
+      }
+    });
+  }
+
+  // ---------- TOC build ----------
+  function buildToc() {
+    var list = document.getElementById('tocList');
+    list.innerHTML = '';
+    document.querySelectorAll('.ws-section').forEach(function (section) {
+      var short = section.dataset.short;
+      if (!short) return;
+      var time = section.dataset.time || '';
+      var a = document.createElement('a');
+      a.href = '#' + section.id;
+      a.className = 'toc-item';
+      a.dataset.target = section.id;
+      a.innerHTML = '<span class="label"><span>' + short + '</span><span class="time">' + time + '</span></span><span class="mini-bar"><span></span></span>';
+      a.addEventListener('click', function () {
+        document.getElementById('toc').classList.remove('open');
+      });
+      list.appendChild(a);
+    });
+  }
+
+  var slideIndex = 0;
+  function showSlide(id, focus) {
+    var sections = Array.from(document.querySelectorAll('.ws-section'));
+    var index = sections.findIndex(function(s) { return s.id === id; });
+    if (index < 0) index = 0;
+    slideIndex = index;
+    sections.forEach(function(s, i) { s.hidden = i !== index; s.classList.remove('slide-in'); });
+    var current = sections[index];
+    void current.offsetWidth;
+    current.classList.add('slide-in');
+    document.querySelectorAll('.toc-item').forEach(function(a) { var active = a.dataset.target === current.id; a.classList.toggle('active', active); if(active) a.setAttribute('aria-current','step'); else a.removeAttribute('aria-current'); });
+    document.getElementById('previousSlide').disabled = index === 0;
+    document.getElementById('nextSlide').disabled = index === sections.length - 1;
+    document.getElementById('slidePosition').textContent = (index + 1) + ' / ' + sections.length;
+    window.scrollTo(0, 0);
+    if(focus) { var heading = current.querySelector('h1, h2'); heading.tabIndex = -1; heading.focus({preventScroll:true}); }
+  }
+  function wireActiveSectionTracking() {
+    window.addEventListener('hashchange', function() { showSlide(location.hash.slice(1), true); });
+    ['previousSlide','nextSlide'].forEach(function(id, n) { document.getElementById(id).addEventListener('click', function() { var sections = document.querySelectorAll('.ws-section'); location.hash = sections[slideIndex + (n ? 1 : -1)].id; }); });
+    showSlide(location.hash.slice(1), false);
+  }
+
+  // ---------- Click-anywhere-on-card skill toggles ----------
+  function wireSkillPickCards() {
+    document.querySelectorAll('.card.skill-pick').forEach(function (card) {
+      card.addEventListener('click', function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return;
+        var cb = card.querySelector('input[type="checkbox"]');
+        if (!cb) return;
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  }
+
+  // ---------- Quizzes ----------
+  function wireQuizzes() {
+    document.querySelectorAll('.quiz').forEach(function (quiz) {
+      quiz.querySelectorAll('.quiz-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          quiz.querySelectorAll('.quiz-btn').forEach(function (b) { b.classList.remove('correct', 'incorrect'); });
+          if (btn.dataset.correct === 'true') {
+            btn.classList.add('correct');
+          } else {
+            btn.classList.add('incorrect');
+            var correctBtn = quiz.querySelector('[data-correct="true"]');
+            if (correctBtn) correctBtn.classList.add('correct');
+          }
+          var fb = quiz.querySelector('.quiz-feedback');
+          if (fb) fb.hidden = false;
+          var example = quiz.querySelector('details'); if (example && btn.dataset.correct === 'true') example.open = true;
+        });
+      });
+    });
+  }
+
+  // ---------- Refresh everything that depends on state ----------
+  function refreshAll() {
+    updateProgress();
+    updateSkillCount();
+    updateRangeOutputs();
+    renderJournalPreview();
+    updateSaveIndicator();
+    personalize();
+  }
+
+  // ---------- Personalized instructions ----------
+  function chosen(name) { var el = document.querySelector('[name="' + name + '"]:checked'); return el ? el.value : ''; }
+  function personalize() {
+    var os = chosen('participant-os'), tool = chosen('participant-tool'), level = chosen('terminal-level');
+    var novice = level === 'new' || level === 'beginner';
+    document.getElementById('profileAdvice').textContent = tool === 'other' && novice ? 'We recommend Claude Code for this workshop: it gives you a supported workflow with guided instructions. Select Claude Code above to use that guidance. If you keep Other, the practical instructions assume advanced knowledge of your chosen harness.' : 'Your selections tailor setup and practical instructions below. You can change them at any time.';
+    applyLevel(tool === 'other' ? 'power' : novice ? 'new' : level === 'advanced' ? 'power' : 'tried');
+    var ready = os && tool && level;
+    if (!ready) { ['appSetup','agentSetup','triageGuidance','implementGuidance'].forEach(function(id) { document.getElementById(id).textContent = 'Choose your operating system, tool, and command-line comfort on the Welcome slide to see tailored instructions.'; }); }
+    else {
+      var detailed = novice && tool !== 'other';
+      var terminal = os === 'windows' ? 'PowerShell (Start → search PowerShell)' : 'Terminal (Spotlight → search Terminal)';
+      var root = os === 'windows' ? 'cd "C:\\path\\to\\workshop-mp-skills-for-ai-native-devs"' : 'cd "/path/to/workshop-mp-skills-for-ai-native-devs"';
+      document.getElementById('appSetup').innerHTML = '<p>Full instructions: <a href="../README.md">repository README.md</a> and <a href="../python-eshop/README.md">app README.md</a>. Prerequisites: Python 3.11+, Node.js 18+, and uv.</p>' + (detailed ? '<p>Open '+terminal+'. A terminal is a text interface for running commands. Replace the example path with your downloaded repository folder. Paste commands one line at a time and press Enter. Keep both server windows open; use Ctrl+C to stop a server.</p>' : '<p>Use '+terminal+'; start from the repository root in each of two terminals.</p>') + '<p>Terminal 1 — backend:</p><pre>'+root+'\ncd python-eshop/backend\nuv sync\nuv run python run.py</pre><p>Terminal 2 — frontend (start from the repo root again):</p><pre>'+root+'\ncd python-eshop/frontend\nnpm install\nnpm run dev</pre><p>Open <a href="http://127.0.0.1:4321">http://127.0.0.1:4321</a>. Sign in with <code>demouser@perthai.com.au</code> / <code>Pass@word1</code>. Backend runs on port 8765.</p>';
+      var agent = tool === 'codex' ? 'Codex' : tool === 'other' ? 'your harness' : 'Claude Code';
+      var prefix = tool === 'codex' ? '$' : '/';
+      var installation = tool === 'desktop' ? '<p>In Claude Desktop, use its Code workspace and select this local repository as the project folder. Use a local coding session for this exercise. Ordinary Chat does not provide the same local coding workflow. See the <a href="https://code.claude.com/docs/en/desktop">official Desktop guide</a>.</p>' : tool === 'claude' ? '<p>In '+terminal+', install using the <a href="https://code.claude.com/docs/en/quickstart">official Claude Code quickstart</a>:</p><pre>'+(os === 'windows' ? 'irm https://claude.ai/install.ps1 | iex' : 'curl -fsSL https://claude.ai/install.sh | bash')+'</pre><p>Then change to the repository root, run <code>claude</code>, and follow sign-in.</p>' : tool === 'codex' ? '<p>Open this local repository in Codex, or use the <a href="https://developers.openai.com/codex/cli/">official Codex CLI setup</a> and start a session from its root. In the CLI, use <code>/skills</code> or type <code>$</code> to find installed skills.</p>' : '<p>Advanced path: configure repository access, tool permissions, skill discovery, and explicit invocation for your harness. Adapt the installer agent choice and skill paths yourself.</p>';
+      document.getElementById('agentSetup').innerHTML = '<h3>Your '+agent+' setup</h3>'+installation+'<p>In '+terminal+' at the repository root, run the editable-file installer:</p><pre>npx skills@latest add mattpocock/skills</pre><p>Choose '+(tool === 'other' ? 'your agent' : tool === 'codex' ? 'Codex' : 'Claude Code')+' in the installer. Select Ask Matt, Grill with Docs, your 2–3 extras, and <code>setup-matt-pocock-skills</code>. This installs a shortlist rather than the full plugin. See <a href="https://github.com/mattpocock/skills#installation-30-second-setup">Matt’s current installation guide</a>.</p>'+(detailed ? '<p>Run the installer in the terminal, not in the agent chat. Use its prompts to choose skills and a project install. If npx is missing, install Node.js first. Return to the agent session after installation.</p>' : '')+'<p>In the agent, invoke <code>'+prefix+'setup-matt-pocock-skills</code> once for this repo; choose your issue tracker (local files are an option). Then invoke <code>'+prefix+'grill-with-docs</code> to explore your intended fix before coding. Select the exact installed entry from the skill menu if it has a namespace.</p><p>Locate the installed SKILL.md files '+(tool === 'codex' ? 'in .agents/skills for a project install' : tool === 'other' ? 'using your harness’s discovery rules' : 'in .claude/skills for a project install')+' and inspect their YAML frontmatter.</p>';
+      document.getElementById('triageGuidance').innerHTML = '<p>'+ (detailed ? 'Type your own description below first, then copy it into your agent session. You do not need a polished bug report. ' : 'Start with your own description of the observed bug. ') + (chosen('participant-tool') === 'other' ? 'If you selected Triage, explicitly invoke it using your harness’s syntax.' : 'If you selected Triage, invoke <code>'+prefix+'triage [your description in your own words]</code>.')+' If you did not select it, use your description directly to plan the fix with Grill with Docs. Complete the remaining notes as useful; Triage helps clarify the report.</p>';
+      document.getElementById('implementGuidance').innerHTML = '<p>'+(detailed ? 'Return to the same project session. Ask the agent to create a fix branch, explain the proposed change, and show how it will verify the bug is fixed. Review its plan before it edits. ' : 'Create a fix branch, agree scope and verification, then inspect the diff. ')+(document.querySelector('[name="skill-select-implement"]').checked ? 'Invoke <code>'+prefix+'implement</code> with the agreed brief.' : 'Ask the agent to implement the agreed fix and run a focused check.')+' '+(document.querySelector('[name="skill-select-codereview"]').checked ? 'Then invoke <code>'+prefix+'code-review</code> with the branch’s starting commit as the review baseline.' : 'Review the diff and test results yourself.')+' Verify the shopping flow in the browser before committing and pushing your branch.</p>';
+    }
+    var actions = {triage:'Use Triage optionally to clarify your bug report and prepare an actionable brief.',wayfinder:'Use Wayfinder if the work is too large for one fix; map it before implementing.',codereview:'Use Code Review after implementing, with a named baseline and the agreed brief.',implement:'Use Implement for the agreed fix after planning and clarifying the bug.',prototype:'Use Prototype for an uncertain design question; record the answer before starting the production fix.'};
+    var selected = Object.keys(actions).filter(function(id) { return document.querySelector('[name="skill-select-'+id+'"]').checked; });
+    document.getElementById('selectedSkillGuidance').innerHTML = '<h3>Your chosen workflow</h3>' + (selected.length ? selected.map(function(id) {return '<p>'+actions[id]+'</p>';}).join('') : '<p>Choose 2–3 extras above to see where each fits into the practical.</p>');
+    document.querySelectorAll('[data-review-skill]').forEach(function(el) { var id = el.dataset.reviewSkill; el.hidden = id !== 'ask-matt' && id !== 'grill-with-docs' && selected.indexOf(id) < 0; });
+    if (document.getElementById('inspectInvocation').checked) {
+      var invocation = document.getElementById('invocationExample');
+      invocation.open = true;
+      invocation.closest('.quiz-feedback').hidden = false;
+    }
+  }
+
+  // ---------- Wiring ----------
+  function init() {
+    buildToc();
+    wireActiveSectionTracking();
+    wireQuizzes();
+    wireSkillPickCards();
+
+    var restored = loadState();
+    applyState(restored);
+
+    // default today's date if empty
+    var dateEl = document.querySelector('[name="session-date"]');
+    if (dateEl && !dateEl.value) {
+      dateEl.value = new Date().toISOString().slice(0, 10);
+    }
+
+    refreshAll();
+
+    document.addEventListener('input', function (e) {
+      if (!e.target.matches('[name]')) return;
+      saveState();
+      refreshAll();
+    });
+    document.addEventListener('change', function (e) {
+      if (!e.target.matches('[name]')) return;
+      saveState();
+      refreshAll();
+    });
+
+    document.getElementById('exportMdBtn').addEventListener('click', exportMarkdown);
+    document.getElementById('exportMdBtn2').addEventListener('click', exportMarkdown);
+    document.getElementById('copyMdBtn').addEventListener('click', copyMarkdown);
+    document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
+    document.getElementById('resetBtn').addEventListener('click', resetAll);
+    document.getElementById('importJsonInput').addEventListener('change', function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (file) importJsonFile(file);
+      e.target.value = '';
+    });
+    document.getElementById('tocToggle').addEventListener('click', function () {
+      document.getElementById('toc').classList.toggle('open');
+    });
+
+    window.addEventListener('beforeunload', saveState);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+</body>
+</html>

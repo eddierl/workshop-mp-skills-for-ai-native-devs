@@ -57,3 +57,11 @@ CREATE TABLE IF NOT EXISTS order_items (
     unit_price REAL NOT NULL,
     units INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS favourites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    catalog_item_id INTEGER NOT NULL REFERENCES catalog_items(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id, catalog_item_id)
+);

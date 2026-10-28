@@ -9,6 +9,7 @@ from models.entities import (
     CatalogBrand,
     CatalogItem,
     CatalogType,
+    Favourite,
     Order,
     OrderItem,
     User,
@@ -315,6 +316,65 @@ class DatabaseClient:
         with self._connection() as conn:
             row = conn.execute("SELECT COUNT(*) FROM catalog_items").fetchone()
             return int(row[0]) > 0
+
+    def add_favourite(self, user_id: int, catalog_item_id: int) -> Favourite:
+        with self._connection() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO favourites (user_id, catalog_item_id)
+                VALUES (?, ?)
+                """,
+                (user_id, catalog_item_id),
+            )
+            return Favourite(
+                id=cursor.lastrowid,
+                user_id=user_id,
+                catalog_item_id=catalog_item_id,
+                created_at=_parse_utc(conn.execute(
+                    "SELECT created_at FROM favourites WHERE id = ?",
+                    (cursor.lastrowid,),
+                ).fetchone()["created_at"]),
+            )
+
+    def get_favourites_by_user_id(self, user_id: int) -> list[Favourite]:
+        with self._connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM favourites WHERE user_id = ? ORDER BY created_at DESC",
+                (user_id,),
+            ).fetchall()
+            return [
+                Favourite(
+                    id=row["id"],
+                    user_id=row["user_id"],
+                    catalog_item_id=row["catalog_item_id"],
+                    created_at=_parse_utc(row["created_at"]),
+                )
+                for row in rows
+            ]
+
+    def get_favourite_by_user_and_item(
+        self, user_id: int, catalog_item_id: int
+    ) -> Favourite | None:
+        with self._connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM favourites WHERE user_id = ? AND catalog_item_id = ?",
+                (user_id, catalog_item_id),
+            ).fetchone()
+            if not row:
+                return None
+            return Favourite(
+                id=row["id"],
+                user_id=row["user_id"],
+                catalog_item_id=row["catalog_item_id"],
+                created_at=_parse_utc(row["created_at"]),
+            )
+
+    def delete_favourite(self, user_id: int, catalog_item_id: int) -> None:
+        with self._connection() as conn:
+            conn.execute(
+                "DELETE FROM favourites WHERE user_id = ? AND catalog_item_id = ?",
+                (user_id, catalog_item_id),
+            )
 
     def _load_basket(self, conn, basket_id: int, buyer_id: str) -> Basket:
         rows = conn.execute(

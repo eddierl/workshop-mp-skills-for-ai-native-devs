@@ -127,3 +127,13 @@ class OrderDetailResponse(BaseModel):
 
 class CreateOrderRequest(BaseModel):
     basket_id: int
+
+
+class FavouriteResponse(BaseModel):
+    id: int
+    user_id: int
+    catalog_item_id: int
+    created_at: datetime
+    name: str
+    price: float
+    picture_uri: str

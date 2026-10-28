@@ -72,3 +72,11 @@ class Order:
     ship_to_country: str
     ship_to_zip_code: str
     items: list[OrderItem] = field(default_factory=list)
+
+
+@dataclass
+class Favourite:
+    id: int
+    user_id: int
+    catalog_item_id: int
+    created_at: datetime

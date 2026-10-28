@@ -45,8 +45,6 @@ async function request(path, options = {}) {
   });
 
   if (response.status === 401 && sentToken) {
-    // The session expired or was tampered with. End it and send the shopper
-    // to sign in again; their basket is safe on the server under their email.
     clearSession();
     window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
   }
@@ -70,8 +68,6 @@ export const api = {
   setAuth(token, email) {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(EMAIL_KEY, email);
-    // The anonymous basket has just been merged into this account, so the
-    // next anonymous session on this browser starts with a fresh id.
     rotateBasketId();
   },
   clearAuth() {
@@ -101,6 +97,16 @@ export const api = {
     request('/api/basket/items', {
       method: 'PUT',
       body: JSON.stringify({ quantities }),
+    }),
+
+  getFavourites: () => request('/api/favourites'),
+  addFavourite: (catalogItemId) =>
+    request(`/api/favourites/${catalogItemId}`, {
+      method: 'POST',
+    }),
+  removeFavourite: (catalogItemId) =>
+    request(`/api/favourites/${catalogItemId}`, {
+      method: 'DELETE',
     }),
 
   register: (email, password) =>

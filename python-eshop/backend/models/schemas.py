@@ -1,6 +1,14 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic_core import PydanticCustomError
+
+from services.passwords import MAX_PASSWORD_BYTES
+
+MAX_LINE_QUANTITY = 99
+
+LineQuantity = Annotated[int, Field(ge=0, le=MAX_LINE_QUANTITY)]
 
 
 class CatalogBrandResponse(BaseModel):
@@ -53,16 +61,28 @@ class BasketResponse(BaseModel):
 
 class AddBasketItemRequest(BaseModel):
     catalog_item_id: int
-    quantity: int = Field(default=1, ge=1)
+    quantity: int = Field(default=1, ge=1, le=MAX_LINE_QUANTITY)
 
 
 class UpdateBasketItemsRequest(BaseModel):
-    quantities: dict[str, int]
+    quantities: dict[str, LineQuantity]
 
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
+
+    @field_validator("password")
+    @classmethod
+    def password_fits_bcrypt(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > MAX_PASSWORD_BYTES:
+            raise PydanticCustomError(
+                "password_too_long",
+                "Password must be at most {limit} bytes "
+                "(72 plain characters, fewer with accents or emoji)",
+                {"limit": MAX_PASSWORD_BYTES},
+            )
+        return value
 
 
 class LoginRequest(BaseModel):

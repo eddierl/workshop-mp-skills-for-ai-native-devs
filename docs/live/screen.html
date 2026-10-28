@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skills Night Screen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="icon" type="image/png" sizes="32x32" href="../brand/favicon-32.png">
+<link rel="stylesheet" href="../style.css">
+<script src="../qrcode.js"></script>
+<script src="deck.js"></script>
+<script src="live.js"></script>
+<script src="pixel.js"></script>
+<style>
+/* The projector view. Same look as slides.html: one slide fills whatever box it gets, navy in every theme.
+   Poll slides split into the question and its live results. */
+:root:root:root {
+  --paper: #0b132b; --surface: #141f3d; --ink: #ffffff; --muted: #c4c8d4; --line: #232f52;
+  --river: #29ccff; --river-soft: #10294a; --sun: #ff9e2c; --sun-soft: #33240f; --alarm: #ff6b8a;
+  --code-bg: #050a17; --band: #0b132b; --hallucination: #b28fef;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { overflow: hidden; background: var(--paper); }
+.deck { position: fixed; inset: 0; container-type: size; display: grid; grid-template-rows: auto 1fr auto; }
+.deck::before { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 50% at 100% 0%, #ff9e2c26, transparent 70%), linear-gradient(160deg, #ff6b8a1f, #6924e01a 45%, #009bcc26); pointer-events: none; }
+.deck > * { position: relative; }
+.skyline { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: auto; max-width: none; pointer-events: none; opacity: 0; transition: opacity .4s; }
+.deck > .top, .deck > .stage, .deck > .bottom { z-index: 1; }
+.deck.scenic .skyline { opacity: .85; }
+.fade { position: absolute; inset: 0; background: linear-gradient(to bottom, #0b132b 30%, #0b132b99 70%, #0b132bcc); pointer-events: none; opacity: 0; transition: opacity .4s; }
+.deck.scenic .fade { opacity: 1; }
+
+.top, .bottom { display: flex; align-items: center; gap: 1rem; padding-block: max(10px, env(safe-area-inset-top, 0px)) 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); font: 500 clamp(.75rem, 2.2cqmin, 1rem) var(--mono); color: var(--muted); }
+.bottom { padding-block: 10px max(10px, env(safe-area-inset-bottom, 0px)); }
+.top .where { flex: 1; min-width: 0; display: flex; }
+.top .logo { display: flex; align-items: center; gap: .55em; color: var(--ink); text-decoration: none; font: 700 clamp(.9rem, 2.6cqmin, 1.25rem) var(--display); }
+.top .logo img { width: 1.9em; height: 1.9em; }
+.top .logo span span { color: var(--river); }
+.status { display: inline-flex; align-items: center; gap: .4em; }
+.status::before { content: ""; width: .6em; height: .6em; border-radius: 50%; background: var(--line); }
+.status.live::before { background: #3ddc97; }
+.status.reconnecting::before { background: var(--sun); }
+.status.host { color: var(--sun); }
+
+.timer { font: 600 clamp(1rem, 4.5cqmin, 2.2rem) var(--mono); font-variant-numeric: tabular-nums; border: 2px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 10px; padding: .15em .55em; cursor: pointer; }
+.timer.running { border-color: var(--river); color: var(--river); }
+.timer.low { border-color: var(--sun); color: var(--sun); }
+.timer.over { border-color: var(--alarm); color: var(--alarm); }
+
+.stage { position: relative; overflow: hidden; }
+.slide { position: absolute; inset: 0; display: none; align-content: center; gap: clamp(.8rem, 3cqmin, 2rem); padding-block: 2cqh; padding-left: max(6cqw, env(safe-area-inset-left, 0px)); padding-right: max(6cqw, env(safe-area-inset-right, 0px)); overflow-y: auto; }
+.slide.on { display: grid; }
+@media (prefers-reduced-motion: no-preference) { .slide.on { animation: rise .35s ease-out; } }
+@keyframes rise { from { transform: translateY(12px); opacity: .4; } to { transform: none; opacity: 1; } }
+.slide.poll { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: center; column-gap: 5cqw; }
+.slide.poll > .main { display: grid; gap: clamp(.8rem, 3cqmin, 2rem); align-content: center; min-width: 0; }
+.slide.poll .say { font-size: clamp(1.8rem, 7cqmin, 4.6rem); }
+@container (max-aspect-ratio: 1/1) { .slide.poll { grid-template-columns: 1fr; } }
+
+.kicker { font: 600 clamp(.8rem, 2.4cqmin, 1.15rem) var(--body); letter-spacing: .16em; text-transform: uppercase; color: var(--sun); }
+.say { font: 700 clamp(2rem, 9cqmin, 6rem)/1.04 var(--display); letter-spacing: -.03em; text-wrap: balance; }
+.say em { font-style: normal; color: var(--river); }
+.sub { font-size: clamp(1rem, 3.4cqmin, 1.9rem); color: var(--muted); max-width: 34em; text-wrap: pretty; }
+.sub b { color: var(--ink); }
+.prompt { background: var(--code-bg); color: var(--code-fg); border: 1px solid var(--line); border-radius: 12px; padding: .8em 1em; font: 400 clamp(.85rem, 2.7cqmin, 1.45rem)/1.5 var(--mono); max-width: 46em; white-space: pre-wrap; }
+.prompt b { color: #5cd8ff; font-weight: 500; }
+
+.flow { list-style: none; margin: 0; padding: 0; counter-reset: f; display: grid; gap: .45em; font-size: clamp(.95rem, 3.1cqmin, 1.7rem); }
+.flow li { counter-increment: f; display: grid; grid-template-columns: 1.7em auto 1fr; align-items: baseline; gap: .7em; }
+.flow li::before { content: counter(f); font: 700 .8em var(--display); width: 1.9em; height: 1.9em; border-radius: 50%; display: grid; place-items: center; background: var(--cta); color: var(--cta-ink); align-self: center; }
+.flow code { font: 500 1em var(--mono); color: var(--river); background: none; padding: 0; }
+.flow span { color: var(--muted); }
+@container (max-width: 34rem) { .flow li { grid-template-columns: 1.7em 1fr; } .flow span { grid-column: 2; } }
+
+.split { display: grid; grid-template-columns: auto 1fr; gap: 4cqmin; align-items: center; }
+.split > div:last-child { display: grid; gap: 1rem; min-width: 0; }
+@container (max-aspect-ratio: 1/1) { .split { grid-template-columns: 1fr; } }
+.qr { width: clamp(9rem, 38cqmin, 22rem); aspect-ratio: 1; max-width: 100%; background: #ffffff; padding: 3%; border-radius: 12px; }
+.qr svg { display: block; width: 100%; height: 100%; }
+.url { font: 500 clamp(.85rem, 2.8cqmin, 1.4rem) var(--mono); color: var(--river); word-break: break-all; }
+
+.tiers, .agenda { display: grid; gap: .5em; font-size: clamp(1rem, 3.2cqmin, 1.8rem); }
+.tiers div, .agenda div { display: grid; grid-template-columns: 5.5em 1fr auto; gap: 1em; padding: .45em .8em; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); align-items: baseline; }
+.tiers b, .agenda b { font-family: var(--display); }
+.tiers span:last-child { font-family: var(--mono); color: var(--river); white-space: nowrap; }
+.agenda span:first-child { font-family: var(--mono); color: var(--sun); }
+.agenda span:last-child { color: var(--muted); }
+.agenda { max-width: 40em; }
+@container (max-width: 34rem) { .tiers div { grid-template-columns: 1fr auto; } .tiers div span:nth-child(2) { display: none; } }
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; font-size: clamp(.95rem, 2.9cqmin, 1.6rem); max-width: 50em; }
+.cards div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: .8em 1em; display: grid; gap: .3em; }
+.cards b { font-family: var(--display); color: var(--sun); }
+.chips { display: flex; flex-wrap: wrap; gap: .5em; font: 500 clamp(.8rem, 2.4cqmin, 1.25rem) var(--mono); }
+.chips span { padding: .25em .7em; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--river); }
+
+/* Live results */
+.results { display: grid; gap: clamp(.4rem, 1.4cqmin, .9rem); font-size: clamp(.95rem, 2.9cqmin, 1.7rem); min-width: 0; }
+.results .q { font: 600 1em/1.3 var(--display); color: var(--muted); }
+.bar-row { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 1em; padding: .45em .8em; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+.bar-row > * { position: relative; }
+.bar-row .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: #29ccff38; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
+.bar-row.lead .fill { background: #ff9e2c55; }
+.bar-row .n { font-family: var(--mono); color: var(--river); font-variant-numeric: tabular-nums; }
+.bar-row.right { border-color: var(--sun); }
+.bar-row.right .fill { background: #ff9e2c66; }
+.bar-row.wrong { opacity: .55; }
+.bar-row .tag { display: inline-flex; align-items: center; gap: .35em; margin-left: .5em; font: 600 .7em var(--mono); letter-spacing: .08em; }
+.bar-row.right .tag { color: var(--sun); }
+.bar-row.wrong .tag { color: var(--hallucination); }
+.bar-row .tag img { height: 1.2em; image-rendering: pixelated; }
+.results .meta { font: 500 .8em var(--mono); color: var(--muted); }
+.results .explain { font-size: .95em; color: var(--ink); background: var(--sun-soft); border-left: 4px solid var(--sun); padding: .6em .9em; border-radius: 0 10px 10px 0; }
+.results .explain code { background: #0006; color: var(--sun); }
+.results .explain { display: grid; gap: .5em; }
+.results .explain pre { margin: 0; font: 400 .8em/1.5 var(--mono); color: #5cd8ff; background: #0006; padding: .5em .8em; border-radius: 8px; white-space: pre-wrap; }
+.results .opts { display: grid; gap: inherit; }
+.slide.many .results .opts { grid-template-columns: 1fr 1fr; }
+.results .hands { font: 500 .7em var(--mono); color: var(--sun); margin-left: .5em; white-space: nowrap; }
+.wall { columns: 2 14em; column-gap: .7em; }
+.wall p { break-inside: avoid; margin: 0 0 .7em; padding: .55em .8em; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--river); border-radius: 10px; font-size: .85em; line-height: 1.35; }
+.layers { display: grid; gap: .35em; font-size: clamp(.85rem, 2.4cqmin, 1.3rem); }
+.layers div { display: grid; grid-template-columns: 6em 11em 1fr; gap: .8em; align-items: baseline; padding: .35em .7em; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); }
+.layers code { background: none; padding: 0; color: var(--river); font-size: .85em; }
+.layers span { color: var(--muted); }
+@container (max-width: 50rem) { .layers div { grid-template-columns: 6em 1fr; } .layers span { display: none; } }
+.slide.poll .cards { grid-template-columns: 1fr; }
+.results .waiting { font: 700 clamp(2.5rem, 12cqmin, 7rem) var(--display); color: var(--river); line-height: 1; }
+
+.vote-here { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.vote-here b { color: var(--sun); font-weight: 500; }
+.slide.poll .split .qr { width: clamp(8rem, 28cqmin, 16rem); }
+.slide.poll .split { grid-template-columns: 1fr; }
+
+/* Q&A */
+.qa-list { display: grid; gap: .55em; font-size: clamp(1rem, 3.2cqmin, 1.9rem); max-width: 56em; }
+.qa-list div { display: grid; grid-template-columns: 3.2em 1fr; gap: .8em; align-items: baseline; padding: .5em .8em; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.qa-list .ups { font: 600 .9em var(--mono); color: var(--sun); text-align: right; }
+.qa-list small { display: block; color: var(--muted); font-size: .65em; margin-top: .2em; }
+.qa-list .empty { display: block; color: var(--muted); }
+.split.qa { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+.split.qa .qr { width: clamp(7rem, 22cqmin, 13rem); }
+.split.qa .say { font-size: clamp(1.8rem, 7cqmin, 4.5rem); }
+.split.qa .sub { font-size: clamp(.95rem, 2.8cqmin, 1.5rem); }
+.split.qa .qa-list { grid-column: 1 / -1; max-width: none; }
+
+.egg-link { font: 500 clamp(.75rem, 2cqmin, 1.05rem) var(--mono); color: var(--muted); display: flex; align-items: center; gap: .6em; }
+.egg-link img { height: 1.6em; image-rendering: pixelated; }
+
+.dots { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+.dots button { width: clamp(8px, 1.4cqmin, 12px); height: clamp(8px, 1.4cqmin, 12px); border-radius: 50%; border: 0; padding: 0; background: var(--line); cursor: pointer; }
+.dots button.has-poll { box-shadow: inset 0 0 0 2px #29ccff66; }
+.dots button[aria-current="true"] { background: var(--cta); }
+.keys { white-space: nowrap; }
+@container (max-width: 40rem) { .keys { display: none; } }
+
+/* The quokka from Quokka Run, now and then crossing the skyline */
+.runner { position: absolute; bottom: 9%; left: 0; height: clamp(28px, 6cqmin, 64px); image-rendering: pixelated; z-index: 1; pointer-events: none; will-change: transform; }
+.runner.bug { height: clamp(16px, 3.4cqmin, 36px); }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+  <div class="top">
+    <span class="where"><span class="logo" id="logo"><img src="../brand/perth-ai-mark.webp" alt="" width="256" height="256"><span>PERTH <span>AI</span></span></span></span>
+    <span class="status" id="status"></span>
+    <span id="clock" aria-label="Current time"></span>
+    <button class="timer" id="timer" type="button" title="Start or pause the timer (T). Reset with R." hidden>00:00</button>
+  </div>
+
+  <img class="skyline" src="../brand/perth-skyline.webp" alt="" width="1600" height="578">
+  <div class="fade"></div>
+  <div class="stage" id="stage"></div>
+
+  <div class="bottom">
+    <div class="dots" id="dots" aria-label="Slides"></div>
+    <span id="count"></span>
+    <span class="keys" id="keys">← → move · T timer · R reset · V reveal</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  var slides = DECK.slides, links = DECK.links();
+  var stage = document.getElementById('stage'), deckEl = document.getElementById('deck');
+  var dots = document.getElementById('dots'), count = document.getElementById('count');
+  var statusEl = document.getElementById('status'), timerEl = document.getElementById('timer');
+  var current = 0, isHost = false, live = false, state = null;
+
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function shortUrl(u) { return u.replace(/^https?:\/\//, '').replace(/\/$/, ''); }
+
+  function qrSvg(text) {
+    if (typeof qrcode !== 'function') return '';
+    var qr = qrcode(0, 'M'); qr.addData(text); qr.make();
+    var n = qr.getModuleCount(), path = '';
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qr.isDark(r, c)) path += 'M' + c + ' ' + r + 'h1v1h-1z';
+    return '<svg viewBox="0 0 ' + n + ' ' + n + '" shape-rendering="crispEdges" role="img" aria-label="QR code for ' + esc(text) + '"><path fill="#0b132b" d="' + path + '"/></svg>';
+  }
+
+  // Build every slide once from deck.js
+  function body(s) {
+    var h = '<p class="kicker">' + s.kicker + '</p>';
+    if (s.prompt && s.promptFirst) h += '<p class="prompt">' + s.prompt + '</p>';
+    h += '<p class="say">' + s.say + '</p>';
+    if (s.sub && !s.qr) h += '<p class="sub">' + s.sub + '</p>';
+    if (s.prompt && !s.promptFirst && !s.qr) h += '<p class="prompt">' + s.prompt + '</p>';
+    if (s.layers) h += '<div class="layers">' + s.layers.map(function (l) { return '<div><b>' + l[0] + '</b><code>' + l[1] + '</code><span>' + l[2] + '</span></div>'; }).join('') + '</div>';
+    if (s.agenda) h += '<div class="agenda">' + s.agenda.map(function (a) { return '<div><span>' + a[0] + '</span><b>' + esc(a[1]) + '</b><span>' + esc(a[2]) + '</span></div>'; }).join('') + '</div>';
+    if (s.cards) h += '<div class="cards">' + s.cards.map(function (c) { return '<div><b>' + c[0] + '</b><span>' + c[1] + '</span></div>'; }).join('') + '</div>';
+    if (s.flow) h += '<ol class="flow">' + s.flow.map(function (f) { return '<li><code>' + f[0] + '</code><span>' + f[1] + '</span></li>'; }).join('') + '</ol>';
+    if (s.chips) h += '<div class="chips">' + s.chips.map(function (c) { return '<span>' + c + '</span>'; }).join('') + '</div>';
+    if (s.tiers) h += '<div class="tiers">' + s.tiers.map(function (t) { return '<div><b>' + t[0] + '</b><span>' + t[1] + '</span><span>' + t[2] + '</span></div>'; }).join('') + '</div>';
+    if (s.qa) h += '<div class="qa-list" data-qa></div>';
+    if (s.egg) h += '<p class="egg-link"><img alt="" data-sprite="run1">Bored? Jump the hallucinations at perthai.org/quokka-run</p>';
+    if (s.qr) {
+      var side = '<p class="say">' + s.say + '</p>' + (s.sub ? '<p class="sub">' + s.sub + '</p>' : '') + (s.prompt ? '<p class="prompt">' + s.prompt + '</p>' : '') + '<p class="url">' + esc(s.qr === 'slack' ? 'perthai.slack.com' : shortUrl(links[s.qr])) + '</p>';
+      h = '<p class="kicker">' + s.kicker + '</p><div class="split' + (s.qa ? ' qa' : '') + '"><div class="qr">' + qrSvg(links[s.qr]) + '</div><div>' + side + '</div>' + (s.qa ? '<div class="qa-list" data-qa></div>' : '') + '</div>';
+    }
+    return h;
+  }
+
+  slides.forEach(function (s, i) {
+    var el = document.createElement('section');
+    var asks = s.poll || s.write;
+    el.className = 'slide' + (asks ? ' poll' : '') + (s.poll && s.poll.options.length > 6 ? ' many' : '');
+    el.innerHTML = asks ? '<div class="main">' + body(s) + '</div><div class="results" data-results></div>' : body(s);
+    stage.appendChild(el);
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = s.poll || s.write ? 'has-poll' : '';
+    b.setAttribute('aria-label', 'Slide ' + (i + 1) + ': ' + s.name);
+    b.addEventListener('click', function () { move(i); });
+    dots.appendChild(b);
+  });
+  var els = Array.prototype.slice.call(stage.children);
+
+  // The small "vote here" corner on poll slides
+  var voteHere = document.createElement('div');
+  voteHere.className = 'vote-here';
+  voteHere.innerHTML = '<b data-verb>Vote on your phone</b> ' + esc(shortUrl(links.live)) + ' · <span data-voters></span>';
+  voteHere.hidden = true;
+  statusEl.parentNode.insertBefore(voteHere, statusEl);
+
+  // Results
+  function renderResults() {
+    var s = slides[current];
+    voteHere.hidden = !((s.poll || s.write) && live);
+    voteHere.querySelector('[data-verb]').textContent = s.write ? 'Answer on your phone' : 'Vote on your phone';
+    if (s.write) {
+      var wall = els[current].querySelector('[data-results]');
+      var w = (state && state.walls && state.walls[s.name]) || { count: 0, items: [] };
+      voteHere.querySelector('[data-voters]').textContent = w.count + (w.count === 1 ? ' answer' : ' answers');
+      if (!live) { wall.innerHTML = '<p class="q">' + esc(s.write.q) + '</p><p class="meta">Talk to your neighbour, then we’ll hear a few.</p>'; return; }
+      var items = w.items.filter(function (a) { return !a.hidden; }).slice(0, 12);
+      wall.innerHTML = '<p class="q">' + esc(s.write.q) + '</p>' + (items.length
+        ? '<div class="wall">' + items.map(function (a) { return '<p>' + esc(a.text) + '</p>'; }).join('') + '</div>'
+        : '<p class="waiting">0</p>') + '<p class="meta">' + w.count + (w.count === 1 ? ' answer' : ' answers') + (w.count > items.length ? ' · newest ' + items.length + ' shown' : '') + '</p>';
+      return;
+    }
+    if (s.poll) {
+      var box = els[current].querySelector('[data-results]');
+      var t = (state && state.tallies[s.name]) || { counts: [], voters: 0 };
+      var revealed = Boolean(state && state.reveal[s.name]);
+      var quiz = s.poll.answer !== undefined;
+      voteHere.querySelector('[data-voters]').textContent = t.voters + (t.voters === 1 ? ' vote' : ' votes');
+      if (!live) {
+        // No backend: show the options so the room can answer with hands, and V still reveals the answer
+        box.innerHTML = '<p class="q">' + esc(s.poll.q) + ' <span class="hands">Show of hands</span></p><div class="opts">' + s.poll.options.map(function (o, i) {
+          var cls = quiz && revealed ? (i === s.poll.answer ? ' right' : ' wrong') : '';
+          return '<div class="bar-row' + cls + '"><span>' + esc(o) + tag(cls) + '</span><span class="n"></span></div>';
+        }).join('') + '</div>' + (quiz && revealed ? explain(s.poll) : '');
+        return;
+      }
+      if (quiz && !revealed) {
+        box.innerHTML = '<p class="q">' + esc(s.poll.q) + '</p><p class="waiting">' + t.voters + '</p><p class="meta">answered so far</p>';
+        return;
+      }
+      var max = Math.max.apply(null, s.poll.options.map(function (o, i) { return t.counts[i] || 0; }).concat(1));
+      var rows = box.querySelectorAll('.bar-row');
+      var html = '<p class="q">' + esc(s.poll.q) + '</p><div class="opts">' + s.poll.options.map(function (o, i) {
+        var n = t.counts[i] || 0;
+        var cls = quiz ? (i === s.poll.answer ? ' right' : ' wrong') : (n && n === max ? ' lead' : '');
+        return '<div class="bar-row' + cls + '"><span class="fill"></span><span>' + esc(o) + tag(cls) + '</span><span class="n">' + n + '</span></div>';
+      }).join('') + '</div><p class="meta">' + t.voters + (t.voters === 1 ? ' person' : ' people') + (s.poll.multi ? ' · tick all that apply' : '') + '</p>' + (quiz ? explain(s.poll) : '');
+      // Rebuild only when the shape changes, so the bars can animate between counts
+      if (!rows.length || box.dataset.shape !== (quiz + '|' + revealed)) { box.innerHTML = html; box.dataset.shape = quiz + '|' + revealed; rows = box.querySelectorAll('.bar-row'); }
+      else {
+        var fresh = document.createElement('div'); fresh.innerHTML = html;
+        var freshRows = fresh.querySelectorAll('.bar-row');
+        rows.forEach(function (r, i) { r.className = freshRows[i].className; r.querySelector('.n').textContent = freshRows[i].querySelector('.n').textContent; });
+        box.querySelector('.meta').textContent = fresh.querySelector('.meta').textContent;
+      }
+      var base = s.poll.multi ? Math.max(t.voters, 1) : Math.max(t.voters, 1);
+      requestAnimationFrame(function () {
+        rows.forEach(function (r, i) { r.querySelector('.fill').style.width = Math.round(100 * (t.counts[i] || 0) / base) + '%'; });
+      });
+    }
+    if (s.qa) {
+      var list = els[current].querySelector('[data-qa]');
+      var qs = (state ? state.questions : []).filter(function (q) { return !q.done; }).sort(function (a, b) { return b.ups - a.ups || a.ts - b.ts; }).slice(0, 6);
+      list.innerHTML = qs.length ? qs.map(function (q) {
+        return '<div><span class="ups">▲ ' + q.ups + '</span><span>' + esc(q.text) + (q.name ? '<small>' + esc(q.name) + '</small>' : '') + '</span></div>';
+      }).join('') : '<span class="empty">' + (live ? 'Ask on your phone: ' + esc(shortUrl(links.live)) : 'Questions asked on phones show up here, most votes first.') + '</span>';
+    }
+  }
+  function explain(p) {
+    return '<div class="explain"><p>' + p.explain + '</p>' + (p.code ? '<pre>' + esc(p.code) + '</pre>' : '') + '</div>';
+  }
+  function tag(cls) {
+    if (cls === ' right') return '<span class="tag">FACT</span>';
+    if (cls === ' wrong') return '<span class="tag"><img alt="" src="' + Pixel().bug + '">HALLUCINATION</span>';
+    return '';
+  }
+
+  // Countdown per slide: starts paused, low at one minute left, then counts up in red when over
+  var plan = 0, left = 0, running = false, tick = null, lastStamp = 0;
+  function fmt(sec) {
+    var neg = sec < 0; sec = Math.abs(Math.round(sec));
+    return (neg ? '+' : '') + String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+  }
+  function paint() {
+    timerEl.textContent = fmt(left);
+    timerEl.classList.toggle('running', running);
+    timerEl.classList.toggle('low', left > 0 && left <= 60);
+    timerEl.classList.toggle('over', left <= 0 && plan > 0 && (running || left < 0));
+  }
+  function loop() { var now = Date.now(); left -= (now - lastStamp) / 1000; lastStamp = now; paint(); }
+  function startStop() {
+    if (!plan) return;
+    timerEl.hidden = false;
+    running = !running;
+    clearInterval(tick);
+    if (running) { lastStamp = Date.now(); tick = setInterval(loop, 250); }
+    paint();
+  }
+  function resetTimer() { running = false; clearInterval(tick); left = plan; paint(); }
+  timerEl.addEventListener('click', function () { if (isHost || !live) startStop(); });
+
+  function show(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    var changed = i !== current || !els[i].classList.contains('on');
+    current = i;
+    els.forEach(function (s, n) { s.classList.toggle('on', n === current); });
+    Array.prototype.forEach.call(dots.children, function (d, n) { d.setAttribute('aria-current', String(n === current)); });
+    count.textContent = (current + 1) + ' / ' + slides.length;
+    deckEl.classList.toggle('scenic', Boolean(slides[current].scenic));
+    if (changed) {
+      plan = (slides[current].minutes || 0) * 60;
+      timerEl.hidden = true;  // stays off screen until T is pressed, so no planned time shows unasked
+      resetTimer();
+      if (history.replaceState) history.replaceState(null, '', location.search + '#' + slides[current].name);
+    }
+    renderResults();
+  }
+
+  // The host moves everyone; a follower screen only follows; with no backend the screen drives itself
+  function move(i) {
+    if (live && !isHost) return;
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    show(i);
+    if (live) conn.send({ type: 'goto', slide: i });
+  }
+  function reveal() {
+    var s = slides[current];
+    if (!s.poll || s.poll.answer === undefined) return;
+    if (live && isHost) conn.send({ type: 'reveal', poll: s.name });
+    else if (!live) { state = state || { tallies: {}, reveal: {}, questions: [] }; state.reveal[s.name] = !state.reveal[s.name]; renderResults(); }
+  }
+
+  var konami = 'ArrowUp ArrowUp ArrowDown ArrowDown ArrowLeft ArrowRight ArrowLeft ArrowRight b a'.split(' '), kpos = 0;
+  document.addEventListener('keydown', function (e) {
+    kpos = e.key === konami[kpos] ? kpos + 1 : (e.key === konami[0] ? 1 : 0);
+    if (kpos === konami.length) { kpos = 0; parade(); return; }
+    if (e.target.closest && e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); move(current + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); move(current - 1); }
+    else if (e.key === 'Home') move(0);
+    else if (e.key === 'End') move(slides.length - 1);
+    else if (e.key === 't' || e.key === 'T') startStop();
+    else if (e.key === 'r' || e.key === 'R') resetTimer();
+    else if (e.key === 'v' || e.key === 'V') reveal();
+    else if (e.key === 'f' || e.key === 'F') { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(function () {}); }
+  });
+  stage.addEventListener('click', function (e) {
+    if (e.target.closest('a, button, .prompt, .results')) return;
+    var box = this.getBoundingClientRect();
+    move(current + (e.clientX - box.left > box.width / 3 ? 1 : -1));
+  });
+
+  var clock = document.getElementById('clock');
+  function showClock() { clock.textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+  showClock(); setInterval(showClock, 15000);
+
+  // Quokka Run easter eggs: one quokka crosses the skyline now and then on scenic slides, hopping a hallucination;
+  // the Konami code sends a whole parade
+  // Each run cleans itself up on a timer as well as at the end of its animation, because a hidden tab pauses
+  // animation frames but not timers, and stranded quokkas used to pile up at the left edge
+  function run(delay, withBug) {
+    var art = Pixel(), w = stage.clientWidth || innerWidth;
+    var q = document.createElement('img');
+    q.className = 'runner'; q.alt = ''; q.src = art.run1;
+    q.style.transform = 'translateX(-100px)';
+    deckEl.appendChild(q);
+    var bug = null, bugX = w * (0.35 + Math.random() * 0.4);
+    if (withBug) { bug = document.createElement('img'); bug.className = 'runner bug'; bug.alt = ''; bug.src = art.bug; bug.style.transform = 'translateX(' + bugX + 'px)'; deckEl.appendChild(bug); }
+    var start = null, frame = 0, dur = 7000;
+    function done() { q.remove(); if (bug) bug.remove(); }
+    setTimeout(done, delay + dur + 1500);
+    function step(ts) {
+      if (start === null) start = ts + delay;
+      var p = (ts - start) / dur;
+      if (p < 0) { q.style.transform = 'translateX(-100px)'; requestAnimationFrame(step); return; }
+      var x = -80 + p * (w + 160), lift = 0;
+      if (bug && Math.abs(x + 20 - bugX) < 70) { lift = Math.sin((x + 90 - bugX) / 140 * Math.PI) * 60; q.src = art.jump; }
+      else if (++frame % 8 === 0) q.src = q.src === art.run1 ? art.run2 : art.run1;
+      q.style.transform = 'translate(' + x + 'px,' + (-Math.max(lift, 0)) + 'px)';
+      if (p < 1) requestAnimationFrame(step); else done();
+    }
+    requestAnimationFrame(step);
+  }
+  function parade() { for (var i = 0; i < 7; i++) run(i * 450, i === 3); }
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setInterval(function () {
+      if (document.hidden || deckEl.querySelector('.runner') || !slides[current].scenic || Math.random() < 0.5) return;
+      run(0, true);
+    }, 40000);
+  }
+  document.querySelectorAll('[data-sprite]').forEach(function (img) { img.src = Pixel()[img.dataset.sprite]; });
+
+  var labels = { live: 'live', connecting: 'connecting', reconnecting: 'reconnecting', offline: 'offline', 'badkey-or-offline': 'offline or wrong key' };
+  var conn = Live({
+    role: 'screen', wantsKey: true,
+    onStatus: function (st) {
+      live = st === 'live';
+      statusEl.className = 'status ' + st + (isHost && live ? ' host' : '');
+      statusEl.textContent = labels[st] || st;
+      if (!live) isHost = false;
+      renderResults();
+    },
+    onState: function (st, host) {
+      state = st; isHost = Boolean(host);
+      statusEl.className = 'status live' + (isHost ? ' host' : '');
+      statusEl.textContent = isHost ? 'live · driving · ' + st.online + ' phones' : 'live · ' + st.online + ' phones';
+      if (st.slide !== current || !els[current].classList.contains('on')) show(st.slide); else renderResults();
+    },
+    onCmd: function (cmd) {
+      if (cmd === 'timer') startStop();
+      else if (cmd === 'reset') resetTimer();
+      else if (cmd === 'parade') parade();
+    }
+  });
+
+  var startAt = slides.findIndex(function (s) { return '#' + s.name === location.hash; });
+  show(startAt < 0 ? 0 : startAt);
+})();
+</script>
+</body>
+</html>

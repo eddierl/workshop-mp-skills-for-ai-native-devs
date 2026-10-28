@@ -1,6 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from models.entities import (
@@ -44,10 +44,10 @@ class DatabaseClient:
     ) -> int:
         query = "SELECT COUNT(*) FROM catalog_items WHERE 1=1"
         params: list = []
-        if brand_id:
+        if brand_id is not None:
             query += " AND catalog_brand_id = ?"
             params.append(brand_id)
-        if type_id:
+        if type_id is not None:
             query += " AND catalog_type_id = ?"
             params.append(type_id)
         with self._connection() as conn:
@@ -69,10 +69,10 @@ class DatabaseClient:
             WHERE 1=1
         """
         params: list = []
-        if brand_id:
+        if brand_id is not None:
             query += " AND ci.catalog_brand_id = ?"
             params.append(brand_id)
-        if type_id:
+        if type_id is not None:
             query += " AND ci.catalog_type_id = ?"
             params.append(type_id)
         query += " ORDER BY ci.id LIMIT ? OFFSET ?"
@@ -211,11 +211,15 @@ class DatabaseClient:
 
     def delete_basket(self, basket_id: int) -> None:
         with self._connection() as conn:
-            conn.execute("DELETE FROM basket_items WHERE basket_id = ?", (basket_id,))
-            conn.execute("DELETE FROM baskets WHERE id = ?", (basket_id,))
+            self._delete_basket_rows(conn, basket_id)
 
-    def create_order(
+    def _delete_basket_rows(self, conn, basket_id: int) -> None:
+        conn.execute("DELETE FROM basket_items WHERE basket_id = ?", (basket_id,))
+        conn.execute("DELETE FROM baskets WHERE id = ?", (basket_id,))
+
+    def place_order(
         self,
+        basket_id: int,
         buyer_id: str,
         ship_to_street: str,
         ship_to_city: str,
@@ -224,7 +228,8 @@ class DatabaseClient:
         ship_to_zip_code: str,
         items: list[tuple[int, str, str, float, int]],
     ) -> Order:
-        order_date = datetime.utcnow().isoformat()
+        """Record the order and empty its basket in a single transaction."""
+        order_date = datetime.now(timezone.utc).isoformat()
         with self._connection() as conn:
             cursor = conn.execute(
                 """
@@ -273,10 +278,11 @@ class DatabaseClient:
                         units=units,
                     )
                 )
+            self._delete_basket_rows(conn, basket_id)
             return Order(
                 id=order_id,
                 buyer_id=buyer_id,
-                order_date=datetime.fromisoformat(order_date),
+                order_date=_parse_utc(order_date),
                 ship_to_street=ship_to_street,
                 ship_to_city=ship_to_city,
                 ship_to_state=ship_to_state,
@@ -357,7 +363,7 @@ class DatabaseClient:
         return Order(
             id=row["id"],
             buyer_id=row["buyer_id"],
-            order_date=datetime.fromisoformat(row["order_date"]),
+            order_date=_parse_utc(row["order_date"]),
             ship_to_street=row["ship_to_street"],
             ship_to_city=row["ship_to_city"],
             ship_to_state=row["ship_to_state"],
@@ -365,6 +371,14 @@ class DatabaseClient:
             ship_to_zip_code=row["ship_to_zip_code"],
             items=items,
         )
+
+
+def _parse_utc(value: str) -> datetime:
+    """Order dates are UTC. Older rows were stored without an offset."""
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def _row_to_catalog_item(row) -> CatalogItem:

@@ -21,7 +21,7 @@ def list_types(service: CatalogService = Depends(get_catalog_service)):
 def list_items(
     brand_id: int | None = Query(default=None),
     type_id: int | None = Query(default=None),
-    page: int = Query(default=1, ge=1),
+    page: int = Query(default=1),
     service: CatalogService = Depends(get_catalog_service),
 ):
     return service.list_items(brand_id, type_id, page)

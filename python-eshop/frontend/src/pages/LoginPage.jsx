@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const expired = searchParams.get('expired') === '1';
+  const returnTo = location.state?.from || searchParams.get('from') || '/';
   const [email, setEmail] = useState('demouser@perthai.com.au');
   const [password, setPassword] = useState('Pass@word1');
   const [error, setError] = useState('');
@@ -17,7 +20,7 @@ export default function LoginPage() {
     setError('');
     try {
       await login(email, password);
-      navigate(location.state?.from || '/');
+      navigate(returnTo.startsWith('/') ? returnTo : '/');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -32,6 +35,12 @@ export default function LoginPage() {
         <p className="mt-1 text-sm text-slate-500">
           Demo account: demouser@perthai.com.au / Pass@word1
         </p>
+
+        {expired && (
+          <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Your session expired. Sign in again to pick up where you left off.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>

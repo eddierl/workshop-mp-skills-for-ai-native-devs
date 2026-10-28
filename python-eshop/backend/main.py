@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from config import settings
 from db.ensure_assets import ensure_product_images
-from db.seed import seed_database, sync_picture_uris
+from db.seed import migrate_catalog, seed_database, sync_picture_uris
 from dependencies import get_db, init_dependencies
 from routers import auth, basket, catalog, orders
 
@@ -18,6 +18,7 @@ async def lifespan(app: FastAPI):
     init_dependencies(db_path)
     ensure_product_images()
     seed_database(get_db())
+    migrate_catalog(get_db())
     sync_picture_uris(get_db())
     yield
 

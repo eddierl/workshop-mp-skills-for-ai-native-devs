@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from config import settings
 from db.client import DatabaseClient
 from services.auth_service import AuthService
-from services.basket_service import BasketService
+from services.basket_service import BasketService, parse_anonymous_basket_id
 from services.catalog_service import CatalogService
 from services.order_service import OrderService
 
@@ -57,22 +57,39 @@ class Buyer:
     is_authenticated: bool
 
 
-def _decode_token(token: str) -> str | None:
+def _invalid_session() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Your session has expired or is invalid. Please sign in again.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+def _decode_token(token: str) -> str:
     try:
         payload = jwt.decode(
             token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
         )
-        email = payload.get("sub")
-        return email if isinstance(email, str) else None
     except JWTError:
-        return None
+        raise _invalid_session()
+    email = payload.get("sub")
+    if not isinstance(email, str):
+        raise _invalid_session()
+    return email
 
 
 def get_current_user_email(
     authorization: str | None = Header(default=None),
 ) -> str | None:
-    if not authorization or not authorization.startswith("Bearer "):
+    """The signed-in shopper's email, or None when no credential was sent.
+
+    A credential that was sent but is expired, tampered with or malformed is
+    rejected outright rather than treated as an anonymous shopper.
+    """
+    if authorization is None:
         return None
+    if not authorization.startswith("Bearer "):
+        raise _invalid_session()
     token = authorization.removeprefix("Bearer ").strip()
     return _decode_token(token)
 
@@ -84,7 +101,13 @@ def get_buyer(
     if user_email:
         return Buyer(id=user_email, is_authenticated=True)
     if x_basket_id:
-        return Buyer(id=x_basket_id, is_authenticated=False)
+        anonymous_id = parse_anonymous_basket_id(x_basket_id)
+        if anonymous_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="X-Basket-Id must be an anonymous basket id (a UUID)",
+            )
+        return Buyer(id=anonymous_id, is_authenticated=False)
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail="X-Basket-Id header or authentication required",

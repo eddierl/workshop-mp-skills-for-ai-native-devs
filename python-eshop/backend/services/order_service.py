@@ -31,9 +31,7 @@ class OrderService:
 
         order_items_data = []
         for basket_item in basket.items:
-            catalog_item = catalog_items.get(basket_item.catalog_item_id)
-            if not catalog_item:
-                continue
+            catalog_item = catalog_items[basket_item.catalog_item_id]
             order_items_data.append(
                 (
                     catalog_item.id,
@@ -44,7 +42,8 @@ class OrderService:
                 )
             )
 
-        order = self.db.create_order(
+        order = self.db.place_order(
+            basket_id=basket_id,
             buyer_id=buyer_id,
             ship_to_street=DEFAULT_ADDRESS["street"],
             ship_to_city=DEFAULT_ADDRESS["city"],
@@ -53,7 +52,6 @@ class OrderService:
             ship_to_zip_code=DEFAULT_ADDRESS["zip_code"],
             items=order_items_data,
         )
-        self.basket_service.delete_basket(basket_id)
         return self._to_detail(order)
 
     def list_for_user(self, buyer_id: str) -> list[OrderSummaryResponse]:

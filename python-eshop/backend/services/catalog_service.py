@@ -29,10 +29,10 @@ class CatalogService:
     def list_items(
         self, brand_id: int | None, type_id: int | None, page: int
     ) -> CatalogListResponse:
-        page = max(page, 1)
         page_size = settings.catalog_page_size
         total_count = self.db.count_catalog_items(brand_id, type_id)
-        total_pages = max(1, math.ceil(total_count / page_size)) if total_count else 1
+        total_pages = max(1, math.ceil(total_count / page_size))
+        page = min(max(page, 1), total_pages)
         offset = (page - 1) * page_size
         items = self.db.get_catalog_items(brand_id, type_id, offset, page_size)
         return CatalogListResponse(

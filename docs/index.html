@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skills Night Setup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Install Matt Pocock's skills and get the workshop shop running.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Layout: one narrow column of numbered steps, readable on a phone held in one hand. */
+.tabs { display: flex; gap: .25rem; border-bottom: 1px solid var(--line); margin-top: 1rem; }
+.tabs button { flex: 1; font: 600 1rem var(--body); background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); padding: .7rem .5rem; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--river); }
+main > .tabs { margin-top: 1.5rem; }
+.extra { margin-bottom: 3rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.extra summary { cursor: pointer; padding: 1rem 1.2rem; font: 600 1.05rem var(--display); }
+.extra > .step { padding: 0 1.2rem 1.2rem; gap: .8rem; }
+.extra .tabs { margin-top: 0; }
+.extra h3 { font-size: 1.05rem; margin-top: .6rem; }
+/* Banner to the live session, shown only when the live Worker serves the site */
+.live-cta { display: flex; align-items: center; gap: .8rem; margin-top: 1.25rem; padding: .9rem 1rem; border-radius: 14px; background: var(--band); color: var(--band-ink); text-decoration: none; box-shadow: inset 0 0 0 2px var(--cta); }
+.live-cta[hidden] { display: none; }
+.live-cta b { color: var(--cta); }
+.live-cta .go { margin-left: auto; font: 700 1.3rem var(--display); color: var(--cta); }
+.live-cta .dot { flex: none; width: .7rem; height: .7rem; border-radius: 50%; background: #3ddc97; box-shadow: 0 0 0 4px #3ddc9733; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="logo" href="./"><img src="brand/perth-ai-mark.webp" alt="" width="256" height="256"><span class="word">PERTH <span>AI</span></span><span class="event">Skills Night</span></a>
+    <nav aria-label="Pages">
+      <a href="./" aria-current="page">Setup</a>
+      <a href="part1.html">Part 1</a>
+      <a href="part2.html">Part 2</a>
+      <a href="skills.html">Skills</a>
+      <a href="live/" data-live hidden>Live</a>
+    </nav>
+  </div>
+</header>
+
+<div class="band">
+  <img class="skyline" src="brand/perth-skyline.webp" alt="" width="1600" height="578">
+  <div class="wrap">
+    <p class="eyebrow">Matt Pocock skills · Part 2</p>
+    <h1>Get set up</h1>
+    <p class="lede">Four steps, with the coding agent you already use. Stuck? Put your hand up and one of us will come to you.</p>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <a class="live-cta" href="live/" data-live hidden>
+    <span class="dot" aria-hidden="true"></span>
+    <span><b>The session is live.</b> Vote, answer quick checks and ask questions from your phone.</span>
+    <span class="go" aria-hidden="true">→</span>
+  </a>
+
+  <div class="tabs" role="tablist" aria-label="Your coding agent">
+    <button role="tab" id="agent-claude" aria-selected="true" type="button" data-agent="claude">Claude Code</button>
+    <button role="tab" id="agent-codex" aria-selected="false" type="button" data-agent="codex">Codex</button>
+    <button role="tab" id="agent-copilot" aria-selected="false" type="button" data-agent="copilot">Copilot</button>
+    <button role="tab" id="agent-other" aria-selected="false" type="button" data-agent="other">Others</button>
+  </div>
+
+  <ol class="steps">
+    <li><div class="step"><h2>Install the skills</h2>
+      <div class="cmd" data-agent-panel="claude"><pre>claude plugin install mattpocock-skills@claude-plugins-official</pre></div>
+      <div class="cmd" data-agent-panel="codex" hidden><pre>codex plugin marketplace add mattpocock/skills
+codex plugin add mattpocock-skills@mattpocock</pre></div>
+      <div class="cmd" data-agent-panel="copilot" hidden><pre>copilot plugin marketplace add mattpocock/skills
+copilot plugin install mattpocock-skills@mattpocock</pre></div>
+      <div class="cmd" data-agent-panel="other" hidden><pre>npx skills@latest add mattpocock/skills</pre></div>
+      <p data-agent-panel="other" hidden>Works for Cursor, Windsurf, OpenCode, Amp and more. It asks which agent and which skills: take them all, and make sure <code>setup-matt-pocock-skills</code> is ticked.</p>
+      <div class="cmd" data-agent-panel="other" hidden><span class="label">Gemini CLI</span><pre>gemini skills install https://github.com/mattpocock/skills.git --path skills/engineering
+gemini skills install https://github.com/mattpocock/skills.git --path skills/productivity</pre></div>
+      <p>Run it in your normal terminal, not inside the agent. Use one install method per agent, or you get every skill twice.</p>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>What gets installed?</dt>
+        <dd>27 skills from <a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener">mattpocock/skills</a> (version 1.3). Each skill is a Markdown file of instructions your agent reads when it needs it. Nothing runs on your machine at install time.</dd>
+        <dt>Where does it go?</dt>
+        <dd>Into your agent's own settings folder, not into a repo, so it works in every project.</dd>
+        <dd data-agent-panel="claude">It comes from Claude Code's official plugin marketplace and updates itself.</dd>
+        <dd data-agent-panel="codex" hidden>The first line adds Matt's GitHub repo as a plugin source. The second installs the plugin from it. Codex updates it at startup.</dd>
+        <dd data-agent-panel="copilot" hidden>The first line adds Matt's GitHub repo as a plugin source. The second installs the plugin from it. Using VS Code instead of the CLI? Run <b>Chat: Install Plugin From Source</b> with <code>https://github.com/mattpocock/skills</code>.</dd>
+        <dd data-agent-panel="other" hidden>These are plain files you can read and edit. They don't update themselves: run <code>npx skills@latest update</code> later.</dd>
+        <dt>I already have them. Do I need to do anything?</dt>
+        <dd data-agent-panel="claude">Run it again or check <code>/plugin</code> in Claude Code. You want 1.3 or later, which starts with <code>/grill-with-docs</code> and has <code>/implement-spec</code>, <code>/retro</code> and <code>pr</code>.</dd>
+        <dd data-agent-panel="codex copilot other" hidden>Make sure you have 1.3 or later. It starts with <code>grill-with-docs</code> and has <code>implement-spec</code>, <code>retro</code> and <code>pr</code>. Running the install again picks up the latest.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Make your own copy of the shop</h2>
+      <a class="cta" href="https://github.com/new?template_name=workshop-mp-skills-for-ai-native-devs&amp;template_owner=perth-ai" target="_blank" rel="noopener">Create my copy on GitHub</a>
+      <p>Tick <b>Include all branches</b>, or Part 2 won't come with it. Then clone it and switch to Part 2. Swap in your GitHub name and the name you gave the repo.</p>
+      <div class="cmd"><pre>gh repo clone YOUR-NAME/YOUR-REPO
+cd YOUR-REPO
+git switch mash/part-2-new-features</pre></div>
+      <p>No <code>gh</code>? Use <code>git clone https://github.com/YOUR-NAME/YOUR-REPO</code>. Already made a copy in Part 1? <a href="part2.html#switch">Switch to Part 2</a>.</p>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>What is this repo?</dt>
+        <dd>A small online shop: a Python (FastAPI) backend with a SQLite database, and a React frontend. <code>main</code> is the buggy shop from Part 1. <code>mash/part-2-new-features</code> has every bug fixed and 38 tests passing.</dd>
+        <dt>Why a copy?</dt>
+        <dd>The button makes a brand new repo in your account. Its issues and pull requests are yours, so your agent can file tickets and open PRs without touching anyone else's work.</dd>
+        <dt>Public or private?</dt>
+        <dd>Either works.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Set up the skills in your copy</h2>
+      <p>Start your agent in the repo folder, then run the setup skill.</p>
+      <div class="cmd" data-agent-panel="claude"><pre>claude
+/setup-matt-pocock-skills</pre></div>
+      <div class="cmd" data-agent-panel="codex" hidden><pre>codex
+$setup-matt-pocock-skills</pre></div>
+      <div class="cmd" data-agent-panel="copilot" hidden><pre>copilot
+/setup-matt-pocock-skills</pre></div>
+      <div class="cmd" data-agent-panel="other" hidden><pre>/setup-matt-pocock-skills</pre></div>
+      <p data-agent-panel="other" hidden>If your agent has no slash commands, type: Use the setup-matt-pocock-skills skill.</p>
+      <p>When it asks where issues go, pick GitHub if <code>gh</code> is signed in. Otherwise pick local files. Say yes to the default labels.</p>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>What will it ask?</dt>
+        <dd>Up to three things, one at a time, each with a recommended answer: where issues live (GitHub, GitLab or local files), whether to keep the default triage labels, and where the glossary and decision records go.</dd>
+        <dt>What does it change?</dt>
+        <dd>It shows you a draft first, then adds an "Agent skills" section to the repo's instructions file and writes a few short notes under <code>docs/agents/</code>. Commit them like any other change.</dd>
+        <dt>Why do I need it?</dt>
+        <dd>The skills that write specs and tickets need to know where to put them. You run it once per repo.</dd>
+        <dt data-agent-panel="codex" hidden>Why the <code>$</code>?</dt>
+        <dd data-agent-panel="codex" hidden>In Codex, <code>$name</code> runs a skill by name. Skills you start yourself, like this one, only run that way.</dd>
+        <dt>Local files?</dt>
+        <dd>Tickets go in a <code>.scratch/</code> folder as Markdown instead of GitHub Issues. Everything else works the same.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Run the shop</h2>
+      <p>Needs <code>uv</code> and Node. Missing one? See below.</p>
+      <div class="cmd"><span class="label">Terminal 1</span><pre>cd python-eshop/backend
+uv sync
+uv run python run.py</pre></div>
+      <div class="cmd"><span class="label">Terminal 2</span><pre>cd python-eshop/frontend
+npm install
+npm run dev</pre></div>
+      <p>Open <a href="http://127.0.0.1:4321" target="_blank" rel="noopener">127.0.0.1:4321</a>. Sign in with <code>demouser@perthai.com.au</code> and <code>Pass@word1</code>.</p>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>Terminal 1</dt>
+        <dd><code>uv sync</code> downloads the right Python and the backend's packages into a local <code>.venv</code> folder. <code>run.py</code> starts the API on port 8765 and creates and fills <code>eshop.db</code> the first time.</dd>
+        <dt>Terminal 2</dt>
+        <dd><code>npm install</code> downloads the frontend's packages, which takes a minute. <code>npm run dev</code> serves the shop on port 4321 and passes API calls through to Terminal 1.</dd>
+        <dt>Why two terminals?</dt>
+        <dd>Both keep running until you press Ctrl+C. Leave them open and use a third terminal for your agent.</dd>
+        <dt>Want the tests?</dt>
+        <dd>In <code>python-eshop/backend</code>, run <code>uv run pytest</code>. Your agent runs them too when it builds with the <code>tdd</code> skill.</dd>
+        <dt>Port already in use?</dt>
+        <dd>Something else is on 8765 or 4321, often a copy of the shop from the first half. Stop it with Ctrl+C in its terminal.</dd>
+      </dl></details>
+    </div></li>
+  </ol>
+
+  <div class="done">
+    <h2>You're ready when the shop shows products with pictures</h2>
+    <p class="muted">Next: <a href="skills.html">what each skill does, and the order to use them</a>.</p>
+  </div>
+
+  <details class="extra">
+    <summary>Missing a tool, or no coding agent yet?</summary>
+    <div class="step">
+      <div class="tabs" role="tablist" aria-label="Your computer">
+        <button role="tab" id="tab-win" aria-selected="true" type="button" data-os="win">Windows</button>
+        <button role="tab" id="tab-mac" aria-selected="false" type="button" data-os="mac">Mac</button>
+        <button role="tab" id="tab-linux" aria-selected="false" type="button" data-os="linux">Linux</button>
+      </div>
+      <h3>Git, GitHub CLI, Node and uv</h3>
+      <div data-panel="win" class="step">
+        <p>In PowerShell, then close and reopen it.</p>
+        <div class="cmd"><pre>winget install Git.Git OpenJS.NodeJS.LTS GitHub.cli
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"</pre></div>
+      </div>
+      <div data-panel="mac" class="step" hidden>
+        <p>In Terminal, with <a href="https://brew.sh" target="_blank" rel="noopener">Homebrew</a>.</p>
+        <div class="cmd"><pre>xcode-select --install
+brew install node gh uv</pre></div>
+      </div>
+      <div data-panel="linux" class="step" hidden>
+        <p>Use your distro's package manager for git, gh and Node 18+.</p>
+        <div class="cmd"><pre>sudo apt install git gh nodejs npm
+curl -LsSf https://astral.sh/uv/install.sh | sh</pre></div>
+      </div>
+      <p>You don't need Python. uv fetches the right version. Sign in to GitHub with <code>gh auth login</code>.</p>
+
+      <h3>A coding agent</h3>
+      <div class="step" data-agent-panel="claude">
+        <div class="cmd" data-os-cmd="win" hidden><pre>irm https://claude.ai/install.ps1 | iex</pre></div>
+        <div class="cmd" data-os-cmd="mac linux"><pre>curl -fsSL https://claude.ai/install.sh | bash</pre></div>
+        <p>Run <code>claude</code> once and sign in. You need a paid Claude plan or API key.</p>
+      </div>
+      <div class="step" data-agent-panel="codex" hidden>
+        <div class="cmd"><pre>npm install -g @openai/codex</pre></div>
+        <p>Run <code>codex</code> once and sign in with ChatGPT.</p>
+      </div>
+      <div class="step" data-agent-panel="copilot" hidden>
+        <div class="cmd"><pre>npm install -g @github/copilot</pre></div>
+        <p>Run <code>copilot</code> once and sign in with GitHub. The free Copilot plan is fine.</p>
+      </div>
+      <div class="step" data-agent-panel="other" hidden>
+        <p>Install Cursor, Windsurf or OpenCode from its own website and open a terminal inside it.</p>
+      </div>
+      <p class="muted">No account tonight? Pair with your neighbour. That's half the fun.</p>
+    </div>
+  </details>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>Perth AI · Western Australia's community for people building with AI.</span>
+    <a href="https://perthai.org" target="_blank" rel="noopener">perthai.org</a>
+  </div>
+</footer>
+
+
+<script src="copy.js"></script>
+<script>
+(function () {
+  var tabs = document.querySelectorAll('[data-os]');
+  function showOs(os) {
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.os === os)); });
+    document.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== os; });
+    document.querySelectorAll('[data-os-cmd]').forEach(function (c) { c.hidden = c.dataset.osCmd.split(' ').indexOf(os) < 0; });
+    try { localStorage.setItem('os', os); } catch (e) {}
+  }
+  tabs.forEach(function (t) { if (t.dataset.os) t.addEventListener('click', function () { showOs(t.dataset.os); }); });
+
+  var agentTabs = document.querySelectorAll('[data-agent]');
+  function showAgent(agent) {
+    agentTabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.agent === agent)); });
+    document.querySelectorAll('[data-agent-panel]').forEach(function (p) { p.hidden = p.dataset.agentPanel.split(' ').indexOf(agent) < 0; });
+    try { localStorage.setItem('agent', agent); } catch (e) {}
+  }
+  agentTabs.forEach(function (t) { t.addEventListener('click', function () { showAgent(t.dataset.agent); }); });
+  var savedAgent = null;
+  try { savedAgent = localStorage.getItem('agent'); } catch (e) {}
+  showAgent(savedAgent && document.querySelector('[data-agent="' + savedAgent + '"]') ? savedAgent : 'claude');
+  var saved = null;
+  try { saved = localStorage.getItem('os'); } catch (e) {}
+  var ua = navigator.userAgent;
+  var guess = /Mac/i.test(ua) && !/iPhone|iPad/i.test(ua) ? 'mac' : /Linux/i.test(ua) && !/Android/i.test(ua) ? 'linux' : 'win';
+  showOs(saved || guess);
+})();
+</script>
+<script src="site-live.js"></script>
+</body>
+</html>

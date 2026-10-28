@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 
-from dependencies import get_auth_service, require_authenticated_user
+from dependencies import get_auth_service
 from models.schemas import AuthResponse, LoginRequest, RegisterRequest
 from services.auth_service import AuthService
 

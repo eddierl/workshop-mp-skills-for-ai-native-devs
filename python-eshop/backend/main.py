@@ -9,7 +9,7 @@ from config import settings
 from db.ensure_assets import ensure_product_images
 from db.seed import migrate_catalog, seed_database, sync_picture_uris
 from dependencies import get_db, init_dependencies
-from routers import auth, basket, catalog, orders
+from routers import auth, basket, catalog, favourites, orders
 
 
 @asynccontextmanager
@@ -40,6 +40,7 @@ app.include_router(catalog.router)
 app.include_router(basket.router)
 app.include_router(auth.router)
 app.include_router(orders.router)
+app.include_router(favourites.router)
 
 
 @app.get("/api/health")

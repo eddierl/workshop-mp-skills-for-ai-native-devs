@@ -8,6 +8,7 @@ from db.client import DatabaseClient
 from services.auth_service import AuthService
 from services.basket_service import BasketService, parse_anonymous_basket_id
 from services.catalog_service import CatalogService
+from services.favourites_service import FavouriteService
 from services.order_service import OrderService
 
 _db: DatabaseClient | None = None
@@ -15,15 +16,17 @@ _basket_service: BasketService | None = None
 _catalog_service: CatalogService | None = None
 _auth_service: AuthService | None = None
 _order_service: OrderService | None = None
+_favourite_service: FavouriteService | None = None
 
 
 def init_dependencies(database_path: str) -> None:
-    global _db, _basket_service, _catalog_service, _auth_service, _order_service
+    global _db, _basket_service, _catalog_service, _auth_service, _order_service, _favourite_service
     _db = DatabaseClient(database_path)
     _basket_service = BasketService(_db)
     _catalog_service = CatalogService(_db)
     _auth_service = AuthService(_db, _basket_service)
     _order_service = OrderService(_db, _basket_service)
+    _favourite_service = FavouriteService(_db)
 
 
 def get_db() -> DatabaseClient:
@@ -49,6 +52,11 @@ def get_auth_service() -> AuthService:
 def get_order_service() -> OrderService:
     assert _order_service is not None
     return _order_service
+
+
+def get_favourite_service() -> FavouriteService:
+    assert _favourite_service is not None
+    return _favourite_service
 
 
 @dataclass

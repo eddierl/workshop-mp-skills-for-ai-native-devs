@@ -31,6 +31,7 @@ class CatalogItemResponse(BaseModel):
     catalog_type_id: int
     brand_name: str | None = None
     type_name: str | None = None
+    is_favourite: bool = False
 
 
 class CatalogListResponse(BaseModel):

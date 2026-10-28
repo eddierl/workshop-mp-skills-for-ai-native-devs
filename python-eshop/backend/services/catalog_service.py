@@ -27,7 +27,11 @@ class CatalogService:
         ]
 
     def list_items(
-        self, brand_id: int | None, type_id: int | None, page: int
+        self,
+        brand_id: int | None,
+        type_id: int | None,
+        page: int,
+        user_id: int | None = None,
     ) -> CatalogListResponse:
         page_size = settings.catalog_page_size
         total_count = self.db.count_catalog_items(brand_id, type_id)
@@ -35,6 +39,13 @@ class CatalogService:
         page = min(max(page, 1), total_pages)
         offset = (page - 1) * page_size
         items = self.db.get_catalog_items(brand_id, type_id, offset, page_size)
+
+        # Build a set of favourited item IDs for the current user (if signed in)
+        favourited_ids: set[int] = set()
+        if user_id is not None:
+            favs = self.db.get_favourites_by_user_id(user_id)
+            favourited_ids = {fav.catalog_item_id for fav in favs}
+
         return CatalogListResponse(
             items=[
                 CatalogItemResponse(
@@ -47,6 +58,7 @@ class CatalogService:
                     catalog_type_id=item.catalog_type_id,
                     brand_name=item.brand_name,
                     type_name=item.type_name,
+                    is_favourite=item.id in favourited_ids,
                 )
                 for item in items
             ],

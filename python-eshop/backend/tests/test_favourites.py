@@ -15,23 +15,18 @@ class TestFavouritesSchema:
         # If the table didn't exist, _ensure_schema would have failed
         pass  # schema is tested implicitly by all other tests
 
-    def test_favourites_table_has_correct_columns(self, client):
+    def test_favourites_table_has_correct_columns(self, client, demo_headers):
         """The favourites table should have id, user_id, catalog_item_id, created_at."""
-        from db.client import DatabaseClient
+        items = client.get("/api/catalog/items?page=1").json()["items"]
+        item_id = items[0]["id"]
 
-        db = client.app.state.db
-        assert isinstance(db, DatabaseClient)
-
-        # Insert a row and verify structure
-        user = db.create_user("test@example.com", "hashed")
-        items = db.get_catalog_items(None, None, 0, 10)
-        assert len(items) > 0
-
-        fav = db.add_favourite(user.id, items[0].id)
-        assert fav.id is not None
-        assert fav.user_id == user.id
-        assert fav.catalog_item_id == items[0].id
-        assert fav.created_at is not None
+        resp = client.post(f"/api/favourites/{item_id}", headers=demo_headers)
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["id"] is not None
+        assert body["catalog_item_id"] == item_id
+        assert body["user_id"] is not None
+        assert body["created_at"] is not None
 
 
 class TestFavouriteEndpoints:
@@ -139,7 +134,7 @@ class TestCatalogEnrichment:
 
         client.post(f"/api/favourites/{item_id}", headers=demo_headers)
 
-        catalog = client.get("/api/catalog/items?page=1").json()
+        catalog = client.get("/api/catalog/items?page=1", headers=demo_headers).json()
         favourited = [i for i in catalog["items"] if i["id"] == item_id]
         assert len(favourited) == 1
         assert favourited[0]["is_favourite"] is True

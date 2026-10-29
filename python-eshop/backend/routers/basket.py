@@ -6,7 +6,7 @@ from models.schemas import (
     BasketResponse,
     UpdateBasketItemsRequest,
 )
-from services.basket_service import BasketService
+from services.basket_service import BasketService, QuantityLimitError
 
 router = APIRouter(prefix="/api/basket", tags=["basket"])
 
@@ -27,6 +27,8 @@ def add_item(
 ):
     try:
         return service.add_item(buyer.id, body.catalog_item_id, body.quantity)
+    except QuantityLimitError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 

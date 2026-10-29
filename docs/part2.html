@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skills Night Part 2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Part 2: build a new feature with Matt Pocock skills, from grilling to merge.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="logo" href="./"><img src="brand/perth-ai-mark.webp" alt="" width="256" height="256"><span class="word">PERTH <span>AI</span></span><span class="event">Skills Night</span></a>
+    <nav aria-label="Pages">
+      <a href="./">Setup</a>
+      <a href="part1.html">Part 1</a>
+      <a href="part2.html" aria-current="page">Part 2</a>
+      <a href="skills.html">Skills</a>
+      <a href="live/" data-live hidden>Live</a>
+    </nav>
+  </div>
+</header>
+
+<div class="band">
+  <img class="skyline" src="brand/perth-skyline.webp" alt="" width="1600" height="578">
+  <div class="wrap">
+    <p class="eyebrow">Part 2</p>
+    <h1>Build a new feature</h1>
+    <p class="lede">The bugs are fixed. Now the client wants favourites: signed-in shoppers can save products and see them on one page. Here's the whole loop, one skill at a time.</p>
+  </div>
+</div>
+
+<main class="wrap">
+  <p class="note">On Codex, type <code>$</code> instead of <code>/</code>, for example <code>$grill-with-docs</code>. In an agent without commands, ask for the skill by name.</p>
+  <ol class="steps">
+    <li id="switch"><div class="step"><h2>Switch to Part 2</h2>
+      <p>In your copy of the shop, put your Part 1 changes aside, then switch branch.</p>
+      <div class="cmd"><pre>git stash -u
+git fetch
+git switch mash/part-2-new-features</pre></div>
+      <p>Rather your agent did it? Paste this in:</p>
+      <div class="cmd prose"><pre>Stash my changes, fetch, and switch this repo to the mash/part-2-new-features branch. Show me git status when you're done.</pre></div>
+      <p>Then run the setup skill once on this branch.</p>
+      <div class="cmd"><pre>/setup-matt-pocock-skills</pre></div>
+      <p>No copy yet, or the branch isn't there? Make one from the <a href="./">setup page</a> with <b>Include all branches</b> ticked.</p>
+    </div></li>
+
+    <li><div class="step"><h2>Grill: agree what to build</h2>
+      <div class="cmd prose"><pre>/grill-with-docs I want to add favourites to this shop: signed-in shoppers can save products and see them on a Favourites page. Keep each question short.</pre></div>
+      <p>Answer fast. If you don't know, say what you'd guess.</p>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>Why get interviewed?</dt>
+        <dd>"Add favourites" hides a dozen decisions: what happens when you sign out, when a product is deleted, whether there's a limit. Settle them now and the agent builds what you meant.</dd>
+        <dt>What's the "docs" part?</dt>
+        <dd>As you agree on words, it writes them into <code>GLOSSARY.md</code>, and records hard-to-undo decisions in <code>docs/adr/</code>. Future sessions read them.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Spec and tickets: write it down</h2>
+      <div class="cmd"><pre>/to-spec</pre></div>
+      <div class="cmd"><pre>/to-tickets</pre></div>
+      <p>Stay in the same session as the grilling. Don't clear yet.</p>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>The spec</dt>
+        <dd>Turns the conversation into one issue describing the feature. No new questions.</dd>
+        <dt>The tickets</dt>
+        <dd>Splits the spec into small tickets, each a thin slice that works end to end, and notes which ones block which.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Build one ticket, test first</h2>
+      <div class="cmd"><pre>/clear</pre></div>
+      <div class="cmd prose"><pre>/implement the smallest favourites ticket. Show me the failing test before you write the code.</pre></div>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>Why clear?</dt>
+        <dd>The ticket holds everything the agent needs. A fresh session keeps it sharp.</dd>
+        <dt>Why the failing test?</dt>
+        <dd>It proves the test can catch the problem. A test that never failed proves nothing.</dd>
+        <dt>What else runs?</dt>
+        <dd>Inside <code>/implement</code>, the <code>tdd</code> skill drives red-green-refactor and <code>code-review</code> checks the result against the spec and the repo's standards.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Open a PR and review it</h2>
+      <div class="cmd prose"><pre>Run the tests and show me the output. Then open a PR in my repo into mash/part-2-new-features using the PR template, and review it against REVIEW.md.</pre></div>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>Who writes the PR?</dt>
+        <dd>The agent, using the <code>pr</code> skill: a small picture of the change, evidence that it works, and how risky it is to merge.</dd>
+        <dt>How risky is risky?</dt>
+        <dd>Docs and copy: low. Ordinary changes: medium, one reviewer. Sign-in, checkout or CI: high, two reviewers. <code>REVIEW.md</code> spells it out for this repo.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Merge, then retro</h2>
+      <p>Read the evidence, fix what matters, and merge it yourself. You land it, you own it.</p>
+      <div class="cmd"><pre>/retro</pre></div>
+      <p>Same session, before you clear. It suggests what to change so the next feature goes smoother.</p>
+    </div></li>
+  </ol>
+
+  <div class="done">
+    <h2>Got something working?</h2>
+    <p class="muted">Show us at the end. Every skill, in order: <a href="skills.html">the skills page</a>.</p>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>Perth AI · Western Australia's community for people building with AI.</span>
+    <a href="https://perthai.org" target="_blank" rel="noopener">perthai.org</a>
+  </div>
+</footer>
+
+<script src="copy.js"></script>
+<script src="site-live.js"></script>
+</body>
+</html>

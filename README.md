@@ -1,26 +1,49 @@
-# Skills for AI-Native Devs
+# eShop: new features with Matt Pocock's skills
 
-A Perth AI Club workshop on using structured skills — rather than unstructured prompting — to work productively and safely in an unfamiliar, AI-generated codebase.
+This branch, `mash/part-2-new-features`, is the starting point for Part 2 of the Perth AI workshop on Matt Pocock's skills for AI coding agents. Part 1 runs from `main`.
 
-## Scenario
+**Setup guide:** https://perth-ai.github.io/workshop-mp-skills-for-ai-native-devs/ · [skills cheat sheet](https://perth-ai.github.io/workshop-mp-skills-for-ai-native-devs/skills.html) · [slides](https://perth-ai.github.io/workshop-mp-skills-for-ai-native-devs/slides.html)
 
-Our client runs a legacy (C#) online store they built a decade ago. They're commercial people, not engineers — but they'd heard about vibe coding, knew a bit of Python, and used it to build a modern Python alternative to their legacy shop. It looked fine at first, but it's turned out to be pretty buggy.
+## The story
 
-They won't rewrite from scratch — they've already invested in custom styling and don't want to lose it. They've brought us in to fix the bugs and to set up a workflow that lets them keep using AI, with more guardrails and a better chance of success.
+In Part 1 you were handed a buggy, vibe-coded online store and triaged it. Those bugs are now fixed, with tests. The client is happy, and now they want new features. Your job is to build one properly: grill the idea, write a spec, break it into tickets, implement it test-first, and get it reviewed and merged.
 
-The buggy Python storefront lives in [`python-eshop/`](python-eshop/README.md).
+## Get your own copy
 
-## Workshop Overview
+1. Click **Use this template** → **Create a new repository** at the top of this page, and tick **Include all branches**.
+2. Clone your new repo and switch to Part 2. Already have a copy from Part 1? Run `git stash -u` and `git fetch` first.
 
-The session opens with a warm-up poll on the room's experience with AI coding, agents, and skills, followed by the scenario above. Attendees then discuss why they think the vibe coding went wrong and how they'd approach it — before we introduce Matt Pocock's skills for Claude Code, what they help with, and where the gaps still are.
+   ```bash
+   git switch mash/part-2-new-features
+   ```
 
-The practical component follows:
+3. Run `/setup-matt-pocock-skills` in your coding agent. Choose GitHub issues if you're signed in to `gh`, or local files if not.
 
-1. **Set up the skills** — install a small, focused shortlist rather than the full set, and understand what setup actually did.
-2. **Triage a bug** — pick a bug from the storefront and work it through a triage skill, with a discussion on harnesses and scaling.
-3. **Implement the fix** — build the fix and push it to a branch.
-4. **Discuss and reflect** — what the skills caught, where they got in the way, and what to change next time.
+Your copy has its own issues, and pull requests go into your own `mash/part-2-new-features`.
 
-Attendees who finish early are encouraged to explore further skills and capabilities on their own.
+## Run the app
 
-See the [workshop folder](workshop/README.md) for the detailed facilitator run sheet and [slides](workshop/presentation.html).
+The full guide is in [`python-eshop/README.md`](python-eshop/README.md). In short, in two terminals:
+
+```bash
+cd python-eshop/backend && uv sync && uv run python run.py
+cd python-eshop/frontend && npm install && npm run dev
+```
+
+Open http://127.0.0.1:4321 and sign in with `demouser@perthai.com.au` / `Pass@word1`.
+
+## Run the tests
+
+```bash
+cd python-eshop/backend && uv run pytest
+```
+
+## What's here for the review step
+
+- [`AGENTS.md`](AGENTS.md): project context your agent loads every session (Codex, Cursor, Copilot and others read it; `CLAUDE.md` points Claude Code at it).
+- [`REVIEW.md`](REVIEW.md): what a reviewer, human or `/code-review`, should care about in this repo.
+- [`.github/pull_request_template.md`](.github/pull_request_template.md): every PR says how it was tested, how risky it is and how to revert it.
+
+## Credits
+
+The app comes from Part 1 of this workshop, on `main`, by Rafael Avigad and Raj Saddi. Released under CC0, like the original.

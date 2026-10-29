@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skills Night Part 1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Part 1: triage the bug reports, then find out why each bug happened.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="logo" href="./"><img src="brand/perth-ai-mark.webp" alt="" width="256" height="256"><span class="word">PERTH <span>AI</span></span><span class="event">Skills Night</span></a>
+    <nav aria-label="Pages">
+      <a href="./">Setup</a>
+      <a href="part1.html" aria-current="page">Part 1</a>
+      <a href="part2.html">Part 2</a>
+      <a href="skills.html">Skills</a>
+      <a href="live/" data-live hidden>Live</a>
+    </nav>
+  </div>
+</header>
+
+<div class="band">
+  <img class="skyline" src="brand/perth-skyline.webp" alt="" width="1600" height="578">
+  <div class="wrap">
+    <p class="eyebrow">Part 1</p>
+    <h1>Triage, then find out why</h1>
+    <p class="lede">Bug reports are piling up on the shop. Before anyone fixes anything, work out which reports are real, which bugs matter, and what actually causes them.</p>
+  </div>
+</div>
+
+<main class="wrap">
+  <p class="note">On Codex, type <code>$</code> instead of <code>/</code>, for example <code>$triage</code>. In an agent without commands, ask for the skill by name.</p>
+  <ol class="steps">
+    <li><div class="step"><h2>Read the bug reports</h2>
+      <p>They're GitHub issues written by "customers": some vague, some wrong, some real.</p>
+      <a class="cta" href="https://github.com/perth-ai/workshop-mp-skills-for-ai-native-devs/issues" target="_blank" rel="noopener">Open the bug reports</a>
+      <p>We’ll show you which copy of the shop to work in.</p>
+    </div></li>
+
+    <li><div class="step"><h2>Triage one</h2>
+      <div class="cmd"><pre>/triage issue #1</pre></div>
+      <p>Swap in the number of the issue you picked.</p>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>What is triage?</dt>
+        <dd>Deciding what a report needs next, before anyone writes code. The agent reads the report and the code, asks you questions, and moves the issue to one of five states.</dd>
+        <dt>The five states</dt>
+        <dd><code>needs-triage</code> not looked at yet · <code>needs-info</code> waiting on the reporter · <code>ready-for-agent</code> clear enough for an agent to build · <code>ready-for-human</code> needs a person's judgement · <code>wontfix</code> not a bug, or not worth it.</dd>
+        <dt>Why bother?</dt>
+        <dd>An agent will happily "fix" a bug that isn't one. Triage is where you catch that, cheaply.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Find the cause, not the symptom</h2>
+      <div class="cmd prose"><pre>Use the diagnosing-bugs skill on issue #1. Show me a command that fails because of this bug before you change any code.</pre></div>
+      <details class="why"><summary>What does this do?</summary><dl>
+        <dt>Why a failing command first?</dt>
+        <dd>If you can make the bug happen on demand, you can prove it's gone. Without that, "fixed" is a guess.</dd>
+        <dt>What happens next?</dt>
+        <dd>The agent narrows the bug down, tests its theories one at a time, then fixes it and keeps the failing check as a regression test.</dd>
+        <dt>Do I always need this?</dt>
+        <dd>No. For an obvious bug, skip to the fix. Save this for the ones that resist a first look.</dd>
+      </dl></details>
+    </div></li>
+
+    <li><div class="step"><h2>Fix it, test first</h2>
+      <div class="cmd"><pre>/implement issue #1</pre></div>
+      <p>The agent writes a test that fails, makes it pass, then reviews its own change.</p>
+    </div></li>
+
+    <li><div class="step"><h2>Ask why it got in</h2>
+      <div class="cmd"><pre>/retro</pre></div>
+      <p>Run it in the same session, before you clear. It suggests changes to the repo's setup, like a check or a written rule, that would have stopped this bug arriving.</p>
+    </div></li>
+  </ol>
+
+  <div class="done">
+    <h2>Then pizza</h2>
+    <p class="muted">After the break: <a href="part2.html">Part 2, building a new feature</a>.</p>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>Perth AI · Western Australia's community for people building with AI.</span>
+    <a href="https://perthai.org" target="_blank" rel="noopener">perthai.org</a>
+  </div>
+</footer>
+
+<script src="copy.js"></script>
+<script src="site-live.js"></script>
+</body>
+</html>

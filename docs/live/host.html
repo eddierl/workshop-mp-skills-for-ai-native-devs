@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skills Night Host</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b132b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="icon" type="image/png" sizes="32x32" href="../brand/favicon-32.png">
+<link rel="stylesheet" href="../style.css">
+<script src="deck.js"></script>
+<script src="live.js"></script>
+<style>
+/* The host remote: drive the projector from a phone or tablet, reveal answers and look after the questions */
+main { padding-block: 1rem 3rem; display: grid; gap: 1rem; }
+.status { margin-left: auto; font: 500 .8rem var(--mono); color: var(--band-muted); }
+.status.live { color: #3ddc97; }
+.nav { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.nav button { font: 700 1.3rem var(--display); padding: 1.1rem; border-radius: 14px; border: 0; cursor: pointer; background: var(--band); color: var(--band-ink); }
+.nav button.next { background: var(--cta); color: var(--cta-ink); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: .9rem 1rem; display: grid; gap: .6rem; }
+.card h2 { font-size: 1.05rem; }
+.now b { font-family: var(--display); font-size: 1.2rem; }
+.now em { font-style: normal; color: var(--river); }
+.row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.btn { font: 600 .9rem var(--display); padding: .6rem 1rem; border-radius: 999px; border: 0; cursor: pointer; background: var(--cta); color: var(--cta-ink); }
+.btn.ghost { background: none; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn.danger { background: none; color: var(--alarm); box-shadow: inset 0 0 0 1.5px var(--alarm); }
+.tally { display: grid; grid-template-columns: 1fr auto; gap: .2rem 1rem; font-size: .95rem; }
+.tally span:nth-child(even) { font-family: var(--mono); color: var(--river); text-align: right; }
+.tally .right { color: var(--sun); font-weight: 600; }
+select { font: 500 1rem var(--body); padding: .55rem; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); width: 100%; }
+.q { display: grid; gap: .35rem; padding: .6rem 0; border-top: 1px solid var(--line); }
+.q:first-of-type { border-top: 0; }
+.q small { color: var(--muted); }
+.q.done, .q.hidden { opacity: .55; }
+.nokey { background: var(--sun-soft); padding: .8rem 1rem; border-radius: 12px; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <span class="logo"><img src="../brand/perth-ai-mark.webp" alt="" width="256" height="256"><span class="word">PERTH <span>AI</span></span><span class="event">Host</span></span>
+    <span class="status" id="status">connecting</span>
+  </div>
+</header>
+<main class="wrap">
+  <p class="nokey" id="nokey" hidden>This page needs the host link with <code>?key=</code> on the end. Open it once and this device remembers it.</p>
+  <div class="nav">
+    <button type="button" id="prev">← Back</button>
+    <button type="button" class="next" id="next">Next →</button>
+  </div>
+  <section class="card now" id="now"></section>
+  <section class="card">
+    <div class="row">
+      <button class="btn ghost" type="button" data-cmd="timer">Timer start/pause</button>
+      <button class="btn ghost" type="button" data-cmd="reset">Timer reset</button>
+    </div>
+    <select id="jump" aria-label="Jump to slide"></select>
+  </section>
+  <section class="card" id="poll" hidden></section>
+  <section class="card">
+    <h2 id="qhead">Questions</h2>
+    <div id="qs"></div>
+  </section>
+  <section class="card">
+    <h2>Rehearsal</h2>
+    <div class="row">
+      <button class="btn ghost" type="button" data-cmd="parade">Quokka parade</button>
+      <button class="btn danger" type="button" id="reset">Clear all votes and questions</button>
+    </div>
+  </section>
+</main>
+<script>
+(function () {
+  var slides = DECK.slides, state = null;
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  slides.forEach(function (s, i) { var o = document.createElement('option'); o.value = i; o.textContent = (i + 1) + '. ' + s.part + ': ' + s.kicker + (s.poll || s.write ? ' ●' : ''); $('jump').appendChild(o); });
+
+  function go(i) { conn.send({ type: 'goto', slide: Math.max(0, Math.min(slides.length - 1, i)) }); }
+  $('prev').onclick = function () { if (state) go(state.slide - 1); };
+  $('next').onclick = function () { if (state) go(state.slide + 1); };
+  $('jump').onchange = function () { go(Number(this.value)); };
+  document.querySelectorAll('[data-cmd]').forEach(function (b) { b.onclick = function () { conn.send({ type: 'cmd', cmd: b.dataset.cmd }); }; });
+  $('reset').onclick = function () {
+    if (confirm('Clear every vote and question? Do this after rehearsal, not during the night.')) conn.send({ type: 'resetAll' });
+  };
+
+  function render() {
+    var s = slides[state.slide], next = slides[state.slide + 1];
+    $('jump').value = state.slide;
+    $('now').innerHTML = '<small class="eyebrow">' + (state.slide + 1) + ' / ' + slides.length + ' · ' + esc(s.part) + '</small><b>' + s.say + '</b>' +
+      (s.minutes ? '<small>' + s.minutes + ' min planned</small>' : '') + (next ? '<small class="muted">Next: ' + next.kicker + '</small>' : '');
+    var box = $('poll');
+    if (s.poll) {
+      var t = state.tallies[s.name] || { counts: [], voters: 0 }, quiz = s.poll.answer !== undefined;
+      box.hidden = false;
+      box.innerHTML = '<h2>' + esc(s.poll.q) + '</h2><div class="tally">' + s.poll.options.map(function (o, i) {
+        return '<span class="' + (quiz && i === s.poll.answer ? 'right' : '') + '">' + esc(o) + '</span><span>' + (t.counts[i] || 0) + '</span>';
+      }).join('') + '</div><small class="muted">' + t.voters + ' voted · ' + state.online + ' phones connected</small><div class="row">' +
+        (quiz ? '<button class="btn" type="button" id="reveal">' + (state.reveal[s.name] ? 'Hide answer' : 'Reveal answer') + '</button>' : '') +
+        '<button class="btn ghost" type="button" id="clear">Clear this poll</button></div>';
+      if (quiz) $('reveal').onclick = function () { conn.send({ type: 'reveal', poll: s.name }); };
+      $('clear').onclick = function () { if (confirm('Clear the votes on this poll?')) conn.send({ type: 'clearPoll', poll: s.name }); };
+    } else if (s.write) {
+      var w = (state.walls && state.walls[s.name]) || { count: 0, items: [] };
+      box.hidden = false;
+      box.innerHTML = '<h2>' + esc(s.write.q) + '</h2><small class="muted">' + w.count + ' on screen · newest first · hide anything that shouldn’t be up</small>' +
+        (w.items.length ? w.items.map(function (a) {
+          return '<div class="q' + (a.hidden ? ' hidden' : '') + '"><span>' + esc(a.text) + '</span><div class="row"><button class="btn ghost" type="button" data-a="' + a.id + '">' + (a.hidden ? 'Show' : 'Hide') + '</button></div></div>';
+        }).join('') : '<small class="muted">No answers yet.</small>') +
+        '<div class="row"><button class="btn ghost" type="button" id="clear">Clear these answers</button></div>';
+      box.querySelectorAll('[data-a]').forEach(function (b) { b.onclick = function () { conn.send({ type: 'hideAnswer', poll: s.name, a: b.dataset.a }); }; });
+      $('clear').onclick = function () { if (confirm('Clear the answers on this slide?')) conn.send({ type: 'clearPoll', poll: s.name }); };
+    } else box.hidden = true;
+
+    var qs = state.questions.concat(state.hidden || []).sort(function (a, b) { return (a.done - b.done) || (b.ups - a.ups) || (a.ts - b.ts); });
+    $('qhead').textContent = 'Questions (' + state.questions.filter(function (q) { return !q.done; }).length + ' open)';
+    $('qs').innerHTML = qs.length ? qs.map(function (q) {
+      return '<div class="q' + (q.done ? ' done' : '') + (q.hidden ? ' hidden' : '') + '"><span>▲ ' + q.ups + ' · ' + esc(q.text) + '</span><small>' + (q.name ? esc(q.name) : 'Anonymous') + (q.hidden ? ' · hidden' : '') + '</small><div class="row">' +
+        '<button class="btn ghost" type="button" data-q="' + q.id + '" data-a="done">' + (q.done ? 'Reopen' : 'Answered') + '</button>' +
+        '<button class="btn ghost" type="button" data-q="' + q.id + '" data-a="hide">' + (q.hidden ? 'Show' : 'Hide') + '</button></div></div>';
+    }).join('') : '<small class="muted">None yet.</small>';
+    $('qs').querySelectorAll('[data-q]').forEach(function (b) { b.onclick = function () { conn.send({ type: 'question', q: b.dataset.q, action: b.dataset.a }); }; });
+  }
+
+  var conn = Live({
+    role: 'host', wantsKey: true,
+    onStatus: function (st) { $('status').className = 'status ' + st; $('status').textContent = st === 'badkey-or-offline' ? 'wrong key or offline' : st; },
+    onState: function (st, host) {
+      state = st;
+      $('status').className = 'status live'; $('status').textContent = host ? 'live · ' + st.online + ' phones' : 'live · not host';
+      render();
+    }
+  });
+  $('nokey').hidden = conn.hasKey;
+})();
+</script>
+</body>
+</html>

@@ -47,6 +47,15 @@ uv run python run.py
 - Swagger docs: http://127.0.0.1:8765/docs
 - Static product images: http://127.0.0.1:8765/static/images/products/
 
+### Running the tests
+
+```bash
+cd python-eshop/backend
+uv run pytest
+```
+
+The suite boots the API in-process against a throwaway SQLite database, so it never touches your `eshop.db`, needs no running server and makes no network calls.
+
 > **Note:** Do not use bare `uvicorn main:app --reload` — that defaults to port 8000, which may already be in use. Always use `uv run python run.py`.
 
 ### 2. Frontend

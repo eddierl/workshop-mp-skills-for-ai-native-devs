@@ -1,6 +1,14 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic_core import PydanticCustomError
+
+from services.passwords import MAX_PASSWORD_BYTES
+
+MAX_LINE_QUANTITY = 99
+
+LineQuantity = Annotated[int, Field(ge=0, le=MAX_LINE_QUANTITY)]
 
 
 class CatalogBrandResponse(BaseModel):
@@ -23,6 +31,7 @@ class CatalogItemResponse(BaseModel):
     catalog_type_id: int
     brand_name: str | None = None
     type_name: str | None = None
+    is_favourite: bool = False
 
 
 class CatalogListResponse(BaseModel):
@@ -53,16 +62,28 @@ class BasketResponse(BaseModel):
 
 class AddBasketItemRequest(BaseModel):
     catalog_item_id: int
-    quantity: int = Field(default=1, ge=1)
+    quantity: int = Field(default=1, ge=1, le=MAX_LINE_QUANTITY)
 
 
 class UpdateBasketItemsRequest(BaseModel):
-    quantities: dict[str, int]
+    quantities: dict[str, LineQuantity]
 
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
+
+    @field_validator("password")
+    @classmethod
+    def password_fits_bcrypt(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > MAX_PASSWORD_BYTES:
+            raise PydanticCustomError(
+                "password_too_long",
+                "Password must be at most {limit} bytes "
+                "(72 plain characters, fewer with accents or emoji)",
+                {"limit": MAX_PASSWORD_BYTES},
+            )
+        return value
 
 
 class LoginRequest(BaseModel):
@@ -91,6 +112,7 @@ class OrderSummaryResponse(BaseModel):
     order_date: datetime
     total: float
     item_count: int
+    discount_amount: float | None = None
 
 
 class OrderDetailResponse(BaseModel):
@@ -103,7 +125,19 @@ class OrderDetailResponse(BaseModel):
     ship_to_zip_code: str
     items: list[OrderItemResponse]
     total: float
+    discount_amount: float | None = None
 
 
 class CreateOrderRequest(BaseModel):
     basket_id: int
+    coupon_code: str | None = None
+
+
+class FavouriteResponse(BaseModel):
+    id: int
+    user_id: int
+    catalog_item_id: int
+    created_at: datetime
+    name: str
+    price: float
+    picture_uri: str

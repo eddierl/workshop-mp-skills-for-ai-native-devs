@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS orders (
     ship_to_city TEXT NOT NULL,
     ship_to_state TEXT NOT NULL,
     ship_to_country TEXT NOT NULL,
-    ship_to_zip_code TEXT NOT NULL
+    ship_to_zip_code TEXT NOT NULL,
+    discount_amount REAL
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
@@ -56,4 +57,23 @@ CREATE TABLE IF NOT EXISTS order_items (
     picture_uri TEXT NOT NULL,
     unit_price REAL NOT NULL,
     units INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS favourites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    catalog_item_id INTEGER NOT NULL REFERENCES catalog_items(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id, catalog_item_id)
+);
+
+CREATE TABLE IF NOT EXISTS promo_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    type TEXT NOT NULL CHECK(type IN ('percentage', 'fixed')),
+    value REAL NOT NULL,
+    minimum_order_value REAL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    expiry_date TEXT,
+    is_redeemed INTEGER NOT NULL DEFAULT 0
 );

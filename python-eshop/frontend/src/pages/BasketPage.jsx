@@ -18,6 +18,7 @@ export default function BasketPage() {
 
   async function loadBasket() {
     setLoading(true);
+    setError('');
     try {
       const data = await api.getBasket();
       setBasket(data);
@@ -57,7 +58,19 @@ export default function BasketPage() {
     return <p className="text-center text-slate-500">Loading basket...</p>;
   }
 
-  if (!basket || basket.items.length === 0) {
+  if (!basket) {
+    return (
+      <div className="card mx-auto max-w-lg text-center">
+        <h1 className="text-2xl font-bold text-slate-900">We couldn't load your basket</h1>
+        <p className="mt-2 text-red-700">{error || 'Something went wrong.'}</p>
+        <button type="button" onClick={loadBasket} className="btn-primary mt-6 inline-flex">
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (basket.items.length === 0) {
     return (
       <div className="card mx-auto max-w-lg text-center">
         <h1 className="text-2xl font-bold text-slate-900">Your basket is empty</h1>
@@ -98,6 +111,7 @@ export default function BasketPage() {
                 id={`qty-${item.id}`}
                 type="number"
                 min="0"
+                max="99"
                 value={quantities[String(item.id)] ?? item.quantity}
                 onChange={(event) =>
                   setQuantities((current) => ({

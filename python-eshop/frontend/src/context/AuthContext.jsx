@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api } from '../api/client';
+import { SESSION_EXPIRED_EVENT, api } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -36,6 +36,19 @@ export function AuthProvider({ children }) {
     await refreshBasket();
     return result;
   }, [refreshBasket]);
+
+  useEffect(() => {
+    function handleExpired() {
+      setEmail(null);
+      setBasketCount(0);
+      const from = window.location.pathname;
+      if (from !== '/login') {
+        window.location.assign(`/login?expired=1&from=${encodeURIComponent(from)}`);
+      }
+    }
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleExpired);
+  }, []);
 
   const logout = useCallback(() => {
     api.clearAuth();

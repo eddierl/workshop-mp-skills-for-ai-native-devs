@@ -22,14 +22,32 @@ function getAuthHeaders() {
   return headers;
 }
 
+export const SESSION_EXPIRED_EVENT = 'eshop:session-expired';
+
+function clearSession() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(EMAIL_KEY);
+}
+
+function rotateBasketId() {
+  localStorage.removeItem(BASKET_ID_KEY);
+}
+
 async function request(path, options = {}) {
+  const headers = {
+    ...getAuthHeaders(),
+    ...options.headers,
+  };
+  const sentToken = Boolean(headers.Authorization);
   const response = await fetch(path, {
     ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...options.headers,
-    },
+    headers,
   });
+
+  if (response.status === 401 && sentToken) {
+    clearSession();
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
@@ -50,10 +68,11 @@ export const api = {
   setAuth(token, email) {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(EMAIL_KEY, email);
+    rotateBasketId();
   },
   clearAuth() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(EMAIL_KEY);
+    clearSession();
+    rotateBasketId();
   },
   isAuthenticated() {
     return Boolean(localStorage.getItem(TOKEN_KEY));
@@ -63,8 +82,8 @@ export const api = {
   getTypes: () => request('/api/catalog/types'),
   getCatalogItems: ({ brandId, typeId, page }) => {
     const params = new URLSearchParams({ page: String(page || 1) });
-    if (brandId) params.set('brand_id', brandId);
-    if (typeId) params.set('type_id', typeId);
+    if (brandId != null && brandId !== '') params.set('brand_id', brandId);
+    if (typeId != null && typeId !== '') params.set('type_id', typeId);
     return request(`/api/catalog/items?${params}`);
   },
 
@@ -78,6 +97,16 @@ export const api = {
     request('/api/basket/items', {
       method: 'PUT',
       body: JSON.stringify({ quantities }),
+    }),
+
+  getFavourites: () => request('/api/favourites'),
+  addFavourite: (catalogItemId) =>
+    request(`/api/favourites/${catalogItemId}`, {
+      method: 'POST',
+    }),
+  removeFavourite: (catalogItemId) =>
+    request(`/api/favourites/${catalogItemId}`, {
+      method: 'DELETE',
     }),
 
   register: (email, password) =>

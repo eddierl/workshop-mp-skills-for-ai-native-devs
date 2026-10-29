@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import get_order_service, require_authenticated_user
+from dependencies import get_order_service, get_promo_service, require_authenticated_user
 from models.schemas import CreateOrderRequest, OrderDetailResponse, OrderSummaryResponse
 from services.basket_service import EmptyBasketError
 from services.order_service import OrderService
@@ -15,7 +15,9 @@ def create_order(
     service: OrderService = Depends(get_order_service),
 ):
     try:
-        return service.create_from_basket(buyer_id, body.basket_id)
+        return service.create_from_basket(
+            buyer_id, body.basket_id, coupon_code=body.coupon_code
+        )
     except EmptyBasketError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except ValueError as exc:

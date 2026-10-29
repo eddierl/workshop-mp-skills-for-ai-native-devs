@@ -1,9 +1,29 @@
+import uuid
+
 from db.client import DatabaseClient
-from models.schemas import BasketItemResponse, BasketResponse
+from models.schemas import MAX_LINE_QUANTITY, BasketItemResponse, BasketResponse
 
 
 class EmptyBasketError(Exception):
     pass
+
+
+class QuantityLimitError(Exception):
+    pass
+
+
+def parse_anonymous_basket_id(value: str) -> str | None:
+    """The canonical form of an anonymous basket id, or None if it isn't one.
+
+    Anonymous baskets are keyed by a client-generated UUID and signed-in
+    baskets by email, so only a UUID may ever address an anonymous basket.
+    """
+    try:
+        parsed = uuid.UUID(value)
+    except (ValueError, AttributeError, TypeError):
+        return None
+    canonical = str(parsed)
+    return canonical if canonical == value.strip().lower() else None
 
 
 class BasketService:
@@ -26,6 +46,14 @@ class BasketService:
         basket = self.db.get_basket_by_buyer_id(buyer_id)
         if not basket:
             basket = self.db.create_basket(buyer_id)
+
+        current = sum(
+            item.quantity for item in basket.items if item.catalog_item_id == catalog_item_id
+        )
+        if current + quantity > MAX_LINE_QUANTITY:
+            raise QuantityLimitError(
+                f"You can have at most {MAX_LINE_QUANTITY} of an item in your basket"
+            )
 
         self.db.add_basket_item(
             basket.id, catalog_item_id, catalog_item.price, quantity
@@ -55,18 +83,19 @@ class BasketService:
         if not user_basket:
             user_basket = self.db.create_basket(user_email)
 
+        existing = {item.catalog_item_id: item.quantity for item in user_basket.items}
         for item in anonymous_basket.items:
+            room = MAX_LINE_QUANTITY - existing.get(item.catalog_item_id, 0)
+            if room <= 0:
+                continue
             self.db.add_basket_item(
                 user_basket.id,
                 item.catalog_item_id,
                 item.unit_price,
-                item.quantity,
+                min(item.quantity, room),
             )
 
         self.db.delete_basket(anonymous_basket.id)
-
-    def delete_basket(self, basket_id: int) -> None:
-        self.db.delete_basket(basket_id)
 
     def _to_response(self, basket) -> BasketResponse:
         items = [

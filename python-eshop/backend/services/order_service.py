@@ -1,6 +1,7 @@
 from db.client import DatabaseClient
 from models.schemas import OrderDetailResponse, OrderItemResponse, OrderSummaryResponse
 from services.basket_service import BasketService, EmptyBasketError
+from services.promo_service import PromoService
 
 
 DEFAULT_ADDRESS = {
@@ -13,11 +14,22 @@ DEFAULT_ADDRESS = {
 
 
 class OrderService:
-    def __init__(self, db: DatabaseClient, basket_service: BasketService):
+    def __init__(
+        self,
+        db: DatabaseClient,
+        basket_service: BasketService,
+        promo_service: PromoService,
+    ):
         self.db = db
         self.basket_service = basket_service
+        self.promo_service = promo_service
 
-    def create_from_basket(self, buyer_id: str, basket_id: int) -> OrderDetailResponse:
+    def create_from_basket(
+        self,
+        buyer_id: str,
+        basket_id: int,
+        coupon_code: str | None = None,
+    ) -> OrderDetailResponse:
         basket = self.db.get_basket_by_id(basket_id)
         if not basket or basket.buyer_id != buyer_id:
             raise ValueError("Basket not found")
@@ -42,6 +54,17 @@ class OrderService:
                 )
             )
 
+        # Calculate subtotal from basket items
+        subtotal = round(sum(item.unit_price * item.quantity for item in basket.items), 2)
+
+        # Validate and apply coupon (if provided)
+        discount_amount: float | None = None
+        if coupon_code:
+            result = self.promo_service.validate(coupon_code, subtotal)
+            if result.error is None:
+                discount_amount = result.discount_amount
+                self.promo_service.mark_redeemed(coupon_code)
+
         order = self.db.place_order(
             basket_id=basket_id,
             buyer_id=buyer_id,
@@ -51,6 +74,7 @@ class OrderService:
             ship_to_country=DEFAULT_ADDRESS["country"],
             ship_to_zip_code=DEFAULT_ADDRESS["zip_code"],
             items=order_items_data,
+            discount_amount=discount_amount,
         )
         return self._to_detail(order)
 
@@ -87,7 +111,9 @@ class OrderService:
             )
             for item in order.items
         ]
-        total = round(sum(item.line_total for item in items), 2)
+        subtotal = round(sum(item.line_total for item in items), 2)
+        discount = order.discount_amount
+        total = round(subtotal - (discount or 0.0), 2)
         return OrderDetailResponse(
             id=order.id,
             order_date=order.order_date,
@@ -98,4 +124,5 @@ class OrderService:
             ship_to_zip_code=order.ship_to_zip_code,
             items=items,
             total=total,
+            discount_amount=discount,
         )

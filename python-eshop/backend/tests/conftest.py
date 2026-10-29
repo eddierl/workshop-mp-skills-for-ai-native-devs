@@ -26,6 +26,8 @@ def client(tmp_path, monkeypatch):
     from main import app
 
     with TestClient(app) as test_client:
+        from dependencies import get_db
+        test_client.db = get_db()
         yield test_client
 
 

@@ -112,6 +112,7 @@ class OrderSummaryResponse(BaseModel):
     order_date: datetime
     total: float
     item_count: int
+    discount_amount: float | None = None
 
 
 class OrderDetailResponse(BaseModel):
@@ -124,10 +125,12 @@ class OrderDetailResponse(BaseModel):
     ship_to_zip_code: str
     items: list[OrderItemResponse]
     total: float
+    discount_amount: float | None = None
 
 
 class CreateOrderRequest(BaseModel):
     basket_id: int
+    coupon_code: str | None = None
 
 
 class FavouriteResponse(BaseModel):

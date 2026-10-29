@@ -47,3 +47,13 @@ _Avoid_: Bookmark, saved item, wish list
 **Favourites list**: A signed-in user's collection of favourites. Displayed on a dedicated page with an empty state if the list is empty.
 
 _Avoid_: Wishlist, saved items, book marks
+
+## Promotions
+
+**PromoCode**: A string token that, when valid, reduces the order total by a fixed amount or a percentage. Each code is single-use — once redeemed, it is invalid for all future orders. A promo code may have an optional minimum order value and an optional expiry date.
+
+_Avoid_: Coupon, voucher, promo, discount code, coupon code
+
+**Discount**: The monetary reduction applied to an order total as a result of a valid promo code. Calculated as either a fixed amount or a percentage of the order subtotal, capped at the subtotal (total never goes below $0).
+
+_Avoid_: Reduction, saving, off amount

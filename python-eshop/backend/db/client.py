@@ -228,6 +228,7 @@ class DatabaseClient:
         ship_to_country: str,
         ship_to_zip_code: str,
         items: list[tuple[int, str, str, float, int]],
+        discount_amount: float | None = None,
     ) -> Order:
         """Record the order and empty its basket in a single transaction."""
         order_date = datetime.now(timezone.utc).isoformat()
@@ -237,8 +238,9 @@ class DatabaseClient:
                 INSERT INTO orders (
                     buyer_id, order_date,
                     ship_to_street, ship_to_city, ship_to_state,
-                    ship_to_country, ship_to_zip_code
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ship_to_country, ship_to_zip_code,
+                    discount_amount
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     buyer_id,
@@ -248,6 +250,7 @@ class DatabaseClient:
                     ship_to_state,
                     ship_to_country,
                     ship_to_zip_code,
+                    discount_amount,
                 ),
             )
             order_id = cursor.lastrowid
@@ -289,6 +292,7 @@ class DatabaseClient:
                 ship_to_state=ship_to_state,
                 ship_to_country=ship_to_country,
                 ship_to_zip_code=ship_to_zip_code,
+                discount_amount=discount_amount,
                 items=order_items,
             )
 
@@ -429,6 +433,7 @@ class DatabaseClient:
             ship_to_state=row["ship_to_state"],
             ship_to_country=row["ship_to_country"],
             ship_to_zip_code=row["ship_to_zip_code"],
+            discount_amount=row["discount_amount"],
             items=items,
         )
 

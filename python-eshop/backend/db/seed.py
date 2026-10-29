@@ -99,3 +99,32 @@ def sync_picture_uris(db: DatabaseClient) -> None:
             WHERE picture_uri LIKE '%.svg'
             """
         )
+
+
+def seed_promo_codes(db: DatabaseClient) -> None:
+    """Insert sample promo codes for workshop testing.
+
+    Inserts a percentage-based code (SE20: 20% off, no minimum) and a
+    fixed-amount code (FLAT10: $10 off, $50 minimum).  Codes are active
+    and have no expiry date.
+    """
+    with db._connection() as conn:
+        existing = conn.execute(
+            "SELECT COUNT(*) FROM promo_codes"
+        ).fetchone()[0]
+        if existing:
+            return
+
+        conn.execute(
+            """
+            INSERT INTO promo_codes (code, type, value, is_active)
+            VALUES ('SE20', 'percentage', 20.0, 1)
+            """,
+        )
+        conn.execute(
+            """
+            INSERT INTO promo_codes (
+                code, type, value, minimum_order_value, is_active
+            ) VALUES ('FLAT10', 'fixed', 10.0, 50.0, 1)
+            """,
+        )

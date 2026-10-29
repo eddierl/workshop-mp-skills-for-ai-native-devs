@@ -71,6 +71,7 @@ class Order:
     ship_to_state: str
     ship_to_country: str
     ship_to_zip_code: str
+    discount_amount: float | None = None
     items: list[OrderItem] = field(default_factory=list)
 
 

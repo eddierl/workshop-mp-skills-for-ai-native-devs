@@ -71,6 +71,12 @@ export default function OrderDetailPage() {
             </div>
           ))}
         </div>
+        {order.discount_amount && (
+          <div className="flex items-center justify-between border-t border-slate-200 pt-2">
+            <span className="text-sm font-medium text-green-700">Promo</span>
+            <span className="text-sm font-semibold text-green-700">-${order.discount_amount.toFixed(2)}</span>
+          </div>
+        )}
         <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
           <span className="text-lg font-semibold text-slate-900">Total</span>
           <span className="text-2xl font-bold text-slate-900">${order.total.toFixed(2)}</span>

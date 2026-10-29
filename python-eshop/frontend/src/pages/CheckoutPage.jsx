@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,10 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(null);
+  const previewTimer = useRef(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -24,12 +28,36 @@ export default function CheckoutPage() {
       .finally(() => setLoading(false));
   }, [isAuthenticated, navigate]);
 
+  async function handleCouponChange(value) {
+    setCouponCode(value);
+    setCouponError('');
+    setDiscountAmount(null);
+    clearTimeout(previewTimer.current);
+    previewTimer.current = null;
+    if (!value.trim()) return;
+    if (!basket || !basket.id) return;
+    previewTimer.current = setTimeout(async () => {
+      try {
+        const result = await api.previewOrder(basket.id, value.trim());
+        if (result.error) {
+          setCouponError(result.error);
+          setDiscountAmount(null);
+        } else {
+          setDiscountAmount(result.discount_amount);
+        }
+      } catch {
+        setCouponError('Failed to validate coupon');
+      }
+    }, 300);
+  }
+
   async function handlePayNow() {
     if (!basket) return;
     setSubmitting(true);
     setError('');
+    setCouponError('');
     try {
-      await api.createOrder(basket.id);
+      await api.createOrder(basket.id, couponCode.trim() || undefined);
       await refreshBasket();
       navigate('/success');
     } catch (err) {
@@ -76,10 +104,32 @@ export default function CheckoutPage() {
             <p className="font-semibold text-slate-900">${item.line_total.toFixed(2)}</p>
           </div>
         ))}
+        {discountAmount > 0 && (
+          <div className="flex items-center justify-between border-t border-slate-200 pt-2">
+            <span className="text-sm font-medium text-green-700">Promo ({couponCode.toUpperCase()})</span>
+            <span className="text-sm font-semibold text-green-700">-${discountAmount.toFixed(2)}</span>
+          </div>
+        )}
         <div className="flex items-center justify-between border-t border-slate-200 pt-4">
           <span className="text-lg font-semibold text-slate-900">Total</span>
-          <span className="text-2xl font-bold text-slate-900">${basket.total.toFixed(2)}</span>
+          <span className="text-2xl font-bold text-slate-900">${(basket.total - (discountAmount ?? 0)).toFixed(2)}</span>
         </div>
+      </div>
+
+      <div className="card">
+        <h2 className="text-lg font-semibold text-slate-900">Promo code</h2>
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            placeholder="Enter promo code"
+            value={couponCode}
+            onChange={(e) => handleCouponChange(e.target.value)}
+            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+        </div>
+        {couponError && (
+          <p className="mt-2 text-sm text-red-700">{couponError}</p>
+        )}
       </div>
 
       <div className="card">
